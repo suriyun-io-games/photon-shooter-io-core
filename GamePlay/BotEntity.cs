@@ -110,7 +110,7 @@ public class BotEntity : CharacterEntity
             else
             {
                 var nextPosition = CurrentEquippedWeapon.WeaponData.equipPosition + 1;
-                if (nextPosition < equippedWeapons.Count && !equippedWeapons[nextPosition].IsEmpty())
+                if (nextPosition < equippedWeapons.Length && !equippedWeapons[nextPosition].IsEmpty())
                     ServerChangeWeapon(nextPosition);
             }
             rotatePosition = enemy.TempTransform.position;

@@ -286,7 +286,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     
     public System.Action onDead;
     public readonly Dictionary<int, PickupEntity> PickableEntities = new Dictionary<int, PickupEntity>();
-    public List<EquippedWeapon> equippedWeapons = new List<EquippedWeapon>();
+    public EquippedWeapon[] equippedWeapons = new EquippedWeapon[MAX_EQUIPPABLE_WEAPON_AMOUNT];
 
     protected Coroutine attackRoutine;
     protected Coroutine reloadRoutine;
@@ -848,7 +848,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.DecreaseAmmo();
                     equippedWeapons[selectWeaponIndex] = equippedWeapon;
-                    equippedWeapons.Dirty(selectWeaponIndex);
+                    photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
                 }
 
                 // Random play shoot sounds
@@ -887,7 +887,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.Reload();
                     equippedWeapons[selectWeaponIndex] = equippedWeapon;
-                    equippedWeapons.Dirty(selectWeaponIndex);
+                    photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
                 }
                 if (WeaponData.clipInFx != null && AudioManager.Singleton != null)
                     AudioSource.PlayClipAtPoint(WeaponData.clipInFx, TempTransform.position, AudioManager.Singleton.sfxVolumeSetting.Level);
@@ -1064,13 +1064,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (!PhotonNetwork.isMasterClient)
             return;
-        for (var i = 0; i < equippedWeapons.Count; ++i)
+        for (var i = 0; i < equippedWeapons.Length; ++i)
         {
             var equippedWeapon = equippedWeapons[i];
             equippedWeapon.ChangeWeaponId(equippedWeapon.defaultId, 0);
             equippedWeapon.SetMaxAmmo();
             equippedWeapons[i] = equippedWeapon;
-            equippedWeapons.Dirty(i);
+            photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
         selectWeaponIndex = defaultWeaponIndex;
 
@@ -1112,7 +1112,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (!PhotonNetwork.isMasterClient)
             return false;
-        if (weaponData == null || string.IsNullOrEmpty(weaponData.GetId()) || weaponData.equipPosition < 0 || weaponData.equipPosition >= equippedWeapons.Count)
+        if (weaponData == null || string.IsNullOrEmpty(weaponData.GetId()) || weaponData.equipPosition < 0 || weaponData.equipPosition >= equippedWeapons.Length)
             return false;
         var equipPosition = weaponData.equipPosition;
         var equippedWeapon = equippedWeapons[equipPosition];
@@ -1124,7 +1124,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcInterruptAttack", PhotonTargets.Others);
             photonView.RPC("RpcInterruptReload", PhotonTargets.Others);
             equippedWeapons[equipPosition] = equippedWeapon;
-            equippedWeapons.Dirty(equipPosition);
+            photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             // Trigger change weapon
             if (selectWeaponIndex == equipPosition)
                 selectWeaponIndex = defaultWeaponIndex;
@@ -1136,7 +1136,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (!PhotonNetwork.isMasterClient)
             return false;
-        if (weaponData == null || weaponData.equipPosition < 0 || weaponData.equipPosition >= equippedWeapons.Count)
+        if (weaponData == null || weaponData.equipPosition < 0 || weaponData.equipPosition >= equippedWeapons.Length)
             return false;
         var equipPosition = weaponData.equipPosition;
         var equippedWeapon = equippedWeapons[equipPosition];
@@ -1147,7 +1147,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (updated)
             {
                 equippedWeapons[equipPosition] = equippedWeapon;
-                equippedWeapons.Dirty(equipPosition);
+                photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             }
         }
         return updated;
@@ -1436,7 +1436,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 equippedWeapon.weaponId = weaponData.GetId();
                 equippedWeapon.SetMaxAmmo();
                 equippedWeapons[equipPos] = equippedWeapon;
-                equippedWeapons.Dirty(equipPos);
+                photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             }
         }
     }
@@ -1444,7 +1444,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected virtual void RpcUpdateSelectWeaponIndex(int selectWeaponIndex)
     {
         _selectWeaponIndex = selectWeaponIndex;
-        if (selectWeaponIndex < 0 || selectWeaponIndex >= equippedWeapons.Count)
+        if (selectWeaponIndex < 0 || selectWeaponIndex >= equippedWeapons.Length)
             return;
         if (characterModel != null && WeaponData != null)
             characterModel.SetWeaponModel(WeaponData.rightHandObject, WeaponData.leftHandObject, WeaponData.shieldObject);
@@ -1469,6 +1469,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected virtual void RpcUpdateExtra(string extra)
     {
         _extra = extra;
+    }
+    [PunRPC]
+    protected virtual void RpcUpdateEquippedWeapons(int index, string defaultId, string weaponId, int currentAmmo, int currentReserveAmmo)
+    {
+        if (index < 0 || index >= equippedWeapons.Length)
+            return;
+        var weapon = new EquippedWeapon();
+        weapon.defaultId = defaultId;
+        weapon.weaponId = weaponId;
+        weapon.currentAmmo = currentAmmo;
+        weapon.currentReserveAmmo = currentReserveAmmo;
+        equippedWeapons[index] = weapon;
     }
     #endregion
 }

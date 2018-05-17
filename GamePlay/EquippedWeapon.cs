@@ -121,5 +121,3 @@ public struct EquippedWeapon
         return Empty.Equals(this);
     }
 }
-
-public class SyncListEquippedWeapon : SyncListStruct<EquippedWeapon> { }

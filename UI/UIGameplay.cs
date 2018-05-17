@@ -134,7 +134,7 @@ public class UIGameplay : MonoBehaviour
             if (equippedWeapon == null)
                 continue;
             equippedWeapon.indexInAvailableList = i;
-            if (i < localCharacter.equippedWeapons.Count && !localCharacter.equippedWeapons[i].IsEmpty())
+            if (i < localCharacter.equippedWeapons.Length && !localCharacter.equippedWeapons[i].IsEmpty())
             {
                 equippedWeapon.equippedWeapon = localCharacter.equippedWeapons[i];
                 equippedWeapon.gameObject.SetActive(true);

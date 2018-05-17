@@ -128,7 +128,7 @@ public class GameplayManager : PunBehaviour
         if (pickupEntities.TryGetValue(prefabName, out pickupPrefab))
         {
             var pickUpEntityGo = PhotonNetwork.InstantiateSceneObject(pickupPrefab.name, GetPickupSpawnPosition(), Quaternion.identity, 0, new object[0]);
-            var pickupEntity = Instantiate(pickupPrefab, position, Quaternion.identity);
+            var pickupEntity = pickUpEntityGo.GetComponent<PickupEntity>();
             pickupEntity.prefabName = prefabName;
         }
     }
