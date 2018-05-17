@@ -1,2 +1,0 @@
-# photon-shooter-io-core
-
