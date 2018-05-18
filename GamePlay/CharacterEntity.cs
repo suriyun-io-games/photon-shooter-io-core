@@ -286,7 +286,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     
     public System.Action onDead;
     public readonly Dictionary<int, PickupEntity> PickableEntities = new Dictionary<int, PickupEntity>();
-    public EquippedWeapon[] equippedWeapons = new EquippedWeapon[MAX_EQUIPPABLE_WEAPON_AMOUNT];
+    public readonly EquippedWeapon[] equippedWeapons = new EquippedWeapon[MAX_EQUIPPABLE_WEAPON_AMOUNT];
 
     protected Coroutine attackRoutine;
     protected Coroutine reloadRoutine;
@@ -300,6 +300,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected Vector2 inputDirection;
     protected bool inputAttack;
     protected bool inputJump;
+    protected Vector3? previousPosition;
+    protected Vector3 currentVelocity;
 
     public float startReloadTime { get; private set; }
     public float reloadDuration { get; private set; }
@@ -621,6 +623,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void FixedUpdate()
     {
+        if (!previousPosition.HasValue)
+            previousPosition = TempTransform.position;
+        var currentMove = TempTransform.position - previousPosition.Value;
+        currentVelocity = currentMove / Time.deltaTime;
+        previousPosition = TempTransform.position;
+
         if (NetworkManager != null && NetworkManager.IsMatchEnded)
             return;
 
@@ -1073,6 +1081,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
         selectWeaponIndex = defaultWeaponIndex;
+        photonView.RPC("RpcWeaponChanged", PhotonTargets.Others, selectWeaponIndex);
 
         isPlayingAttackAnim = false;
         isReloading = false;
@@ -1127,7 +1136,10 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             // Trigger change weapon
             if (selectWeaponIndex == equipPosition)
+            {
                 selectWeaponIndex = defaultWeaponIndex;
+                photonView.RPC("RpcWeaponChanged", PhotonTargets.Others, selectWeaponIndex);
+            }
         }
         return updated;
     }

@@ -12,6 +12,7 @@ public class GameplayManager : PunBehaviour
         public string currencyId;
         public IntAttribute amount;
     }
+    public const int UNIQUE_VIEW_ID = 998;
     public const float REAL_MOVE_SPEED_RATE = 0.1f;
     public static GameplayManager Singleton { get; private set; }
     [Header("Character stats")]
@@ -77,6 +78,17 @@ public class GameplayManager : PunBehaviour
         {
             attributes[availableAttribute.name] = availableAttribute;
         }
+        // Set unique view id
+        PhotonView view = GetComponent<PhotonView>();
+        if (view == null)
+            view = gameObject.AddComponent<PhotonView>();
+        view.viewID = UNIQUE_VIEW_ID;
+    }
+
+    protected virtual void Start()
+    {
+        if (PhotonNetwork.isMasterClient)
+            OnStartServer();
     }
 
     protected virtual void OnStartServer()
