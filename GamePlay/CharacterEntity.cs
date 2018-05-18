@@ -651,7 +651,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         else
         {
-            var velocity = TempRigidbody.velocity;
+            var velocity = currentVelocity;
             var xzMagnitude = new Vector3(velocity.x, 0, velocity.z).magnitude;
             var ySpeed = velocity.y;
             animator.SetBool("IsDead", false);
