@@ -534,6 +534,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected override void Awake()
     {
+        base.Awake();
         gameObject.layer = GameInstance.Singleton.characterLayer;
         if (damageLaunchTransform == null)
             damageLaunchTransform = TempTransform;
