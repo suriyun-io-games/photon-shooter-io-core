@@ -856,7 +856,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.DecreaseAmmo();
                     equippedWeapons[selectWeaponIndex] = equippedWeapon;
-                    photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+                    photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, selectWeaponIndex, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
                 }
 
                 // Random play shoot sounds
@@ -895,7 +895,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.Reload();
                     equippedWeapons[selectWeaponIndex] = equippedWeapon;
-                    photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+                    photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, selectWeaponIndex, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
                 }
                 if (WeaponData.clipInFx != null && AudioManager.Singleton != null)
                     AudioSource.PlayClipAtPoint(WeaponData.clipInFx, TempTransform.position, AudioManager.Singleton.sfxVolumeSetting.Level);
@@ -1078,10 +1078,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
             equippedWeapon.ChangeWeaponId(equippedWeapon.defaultId, 0);
             equippedWeapon.SetMaxAmmo();
             equippedWeapons[i] = equippedWeapon;
-            photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+            photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, i, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
         selectWeaponIndex = defaultWeaponIndex;
-        photonView.RPC("RpcWeaponChanged", PhotonTargets.Others, selectWeaponIndex);
 
         isPlayingAttackAnim = false;
         isReloading = false;
@@ -1133,13 +1132,10 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcInterruptAttack", PhotonTargets.Others);
             photonView.RPC("RpcInterruptReload", PhotonTargets.Others);
             equippedWeapons[equipPosition] = equippedWeapon;
-            photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+            photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, equipPosition, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             // Trigger change weapon
             if (selectWeaponIndex == equipPosition)
-            {
                 selectWeaponIndex = defaultWeaponIndex;
-                photonView.RPC("RpcWeaponChanged", PhotonTargets.Others, selectWeaponIndex);
-            }
         }
         return updated;
     }
@@ -1159,7 +1155,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (updated)
             {
                 equippedWeapons[equipPosition] = equippedWeapon;
-                photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+                photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, equipPosition, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             }
         }
         return updated;
@@ -1295,13 +1291,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (!PhotonNetwork.isMasterClient)
             InterruptReload();
-    }
-
-    [PunRPC]
-    private void RpcWeaponChanged(int index)
-    {
-        if (!PhotonNetwork.isMasterClient)
-            RpcUpdateSelectWeaponIndex(index);
     }
 
     [PunRPC]
@@ -1448,7 +1437,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 equippedWeapon.weaponId = weaponData.GetId();
                 equippedWeapon.SetMaxAmmo();
                 equippedWeapons[equipPos] = equippedWeapon;
-                photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.Others, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+                photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, equipPos, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             }
         }
     }
@@ -1493,6 +1482,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         weapon.currentAmmo = currentAmmo;
         weapon.currentReserveAmmo = currentReserveAmmo;
         equippedWeapons[index] = weapon;
+        if (index == selectWeaponIndex)
+            RpcUpdateSelectWeaponIndex(selectWeaponIndex);
     }
     #endregion
 }
