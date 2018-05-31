@@ -988,6 +988,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcTargetRewardCurrency", photonView.owner, currencyId, amount);
         }
         ++killCount;
+        GameNetworkManager.Singleton.SendKillNotify(playerName, target.playerName, WeaponData == null ? string.Empty : WeaponData.GetId());
     }
 
     public void Heal(int amount)

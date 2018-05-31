@@ -21,6 +21,7 @@ public class UIGameplay : MonoBehaviour
     public Image fillReloadTime;
     public Text textReloadTimePercent;
     public UINetworkGameScores[] uiGameScores;
+    public UIKillNotifies uiKillNotifies;
     public UIRandomAttributes randomAttributes;
     public UIEquippedWeapon[] equippedWeapons;
     public GameObject matchEndUi;
@@ -188,6 +189,22 @@ public class UIGameplay : MonoBehaviour
             var uiGameScore = uiGameScores[i];
             if (uiGameScore != null)
                 uiGameScore.UpdateRankings(rankings);
+        }
+    }
+
+    public void KillNotify(string killerName, string victimName, string weaponId)
+    {
+        if (uiKillNotifies != null)
+        {
+            string weaponName = "Unknow Weapon";
+            Texture weaponIcon = null;
+            var weaponData = GameInstance.GetWeapon(weaponId);
+            if (weaponData != null)
+            {
+                weaponName = weaponData.title;
+                weaponIcon = weaponData.iconTexture;
+            }
+            uiKillNotifies.Notify(killerName, victimName, weaponName, weaponIcon);
         }
     }
 
