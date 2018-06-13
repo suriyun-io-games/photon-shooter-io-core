@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class BattleRoyaleNetworkGameRule : IONetworkGameRule
 {
-    public bool fillBots;
+    [Tooltip("Maximum amount of bots will be filled when start game")]
+    public int fillBots = 10;
     public int endMatchCountDown = 10;
     public int EndMatchCountingDown { get; protected set; }
     public override bool HasOptionBotCount { get { return false; } }
@@ -101,10 +102,12 @@ public class BattleRoyaleNetworkGameRule : IONetworkGameRule
 
     public override void AddBots()
     {
-        if (!fillBots)
+        if (fillBots <= 0)
             return;
 
         var botCount = networkManager.maxConnections - networkManager.Characters.Count;
+        if (botCount > fillBots)
+            botCount = fillBots;
         for (var i = 0; i < botCount; ++i)
         {
             var character = NewBot();
