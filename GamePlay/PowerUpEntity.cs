@@ -20,10 +20,11 @@ public class PowerUpEntity : PunBehaviour
             }
         }
     }
-    [Header("Recovery / Stats")]
+    [Header("Recovery / Stats / Currencies")]
     public int hp;
     public int armor;
     public int exp;
+    public InGameCurrency[] currencies;
     [Header("Effect")]
     public EffectEntity powerUpEffect;
 
@@ -50,6 +51,13 @@ public class PowerUpEntity : PunBehaviour
                 character.Hp += Mathf.CeilToInt(hp * character.TotalHpRecoveryRate);
                 character.Armor += Mathf.CeilToInt(armor * character.TotalArmorRecoveryRate);
                 character.Exp += Mathf.CeilToInt(exp * character.TotalExpRate);
+            }
+            if (character.photonView.isMine)
+            {
+                foreach (var currency in currencies)
+                {
+                    MonetizationManager.Save.AddCurrency(currency.id, currency.amount);
+                }
             }
             StartCoroutine(DestroyRoutine());
         }
