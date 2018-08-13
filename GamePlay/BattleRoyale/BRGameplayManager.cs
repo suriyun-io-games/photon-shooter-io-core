@@ -245,6 +245,13 @@ public class BRGameplayManager : GameplayManager
                         for (var i = 0; i < powerUp.amount; ++i)
                             SpawnPowerUp(powerUp.powerUpPrefab.name);
                     }
+                    foreach (var pickup in pickups)
+                    {
+                        if (pickup.pickupPrefab == null)
+                            continue;
+                        for (var i = 0; i < pickup.amount; ++i)
+                            SpawnPickup(pickup.pickupPrefab.name);
+                    }
                 }
                 break;
             case BRState.WaitingForFirstCircle:
