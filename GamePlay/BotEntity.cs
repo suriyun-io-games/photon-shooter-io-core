@@ -18,7 +18,7 @@ public class BotEntity : CharacterEntity
             if (PhotonNetwork.isMasterClient)
             {
                 botPlayerName = value;
-                photonView.RPC("RpcUpdateBotName", PhotonTargets.AllBuffered, value);
+                photonView.RPC("RpcUpdateBotName", PhotonTargets.All, value);
             }
         }
     }
@@ -161,6 +161,12 @@ public class BotEntity : CharacterEntity
         base.OnSpawn();
         addStats += startAddStats;
         Hp = TotalHp;
+    }
+
+    public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
+    {
+        base.OnPhotonPlayerConnected(newPlayer);
+        photonView.RPC("RpcUpdateBotName", newPlayer, botPlayerName);
     }
 
     [PunRPC]
