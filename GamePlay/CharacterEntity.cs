@@ -287,7 +287,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     }
     
     public System.Action onDead;
-    public readonly Dictionary<int, PickupEntity> PickableEntities = new Dictionary<int, PickupEntity>();
+    public readonly HashSet<PickupEntity> PickableEntities = new HashSet<PickupEntity>();
     public readonly EquippedWeapon[] equippedWeapons = new EquippedWeapon[MAX_EQUIPPABLE_WEAPON_AMOUNT];
 
     protected Coroutine attackRoutine;
@@ -788,7 +788,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         Move(isDashing ? dashDirection : moveDirection);
         Rotate(isDashing ? dashInputMove : inputDirection);
 
-        if (inputAttack)
+        if (inputAttack && GameplayManager.Singleton.CanAttack(this))
             Attack();
         else
             StopAttack();
@@ -1183,7 +1183,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, equipPosition, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
             // Trigger change weapon
             if (selectWeaponIndex == equipPosition)
-                selectWeaponIndex = defaultWeaponIndex;
+                RpcUpdateSelectWeaponIndex(selectWeaponIndex);
         }
         return updated;
     }
@@ -1197,7 +1197,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         var equipPosition = weaponData.equipPosition;
         var equippedWeapon = equippedWeapons[equipPosition];
         var updated = false;
-        if (equippedWeapon.weaponId.Equals(weaponData.GetId()))
+        if (!string.IsNullOrEmpty(equippedWeapon.weaponId) && equippedWeapon.weaponId.Equals(weaponData.GetId()))
         {
             updated = equippedWeapon.AddReserveAmmo(ammoAmount);
             if (updated)
@@ -1217,14 +1217,27 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [PunRPC]
     protected void RpcServerInit(string selectHead, string selectCharacter, string selectWeapons, string extra)
     {
-        Hp = TotalHp;
-        this.selectHead = selectHead;
-        this.selectCharacter = selectCharacter;
-        this.selectWeapons = selectWeapons;
-        this.extra = extra;
+        var alreadyInit = false;
         var networkManager = BaseNetworkGameManager.Singleton;
         if (networkManager != null)
+        {
             networkManager.RegisterCharacter(this);
+            var gameRule = networkManager.gameRule;
+            if (gameRule != null && gameRule is IONetworkGameRule)
+            {
+                var ioGameRule = gameRule as IONetworkGameRule;
+                ioGameRule.NewPlayer(this, selectHead, selectCharacter, selectWeapons, extra);
+                alreadyInit = true;
+            }
+        }
+        if (!alreadyInit)
+        {
+            this.selectHead = selectHead;
+            this.selectCharacter = selectCharacter;
+            this.selectWeapons = selectWeapons;
+            this.extra = extra;
+        }
+        Hp = TotalHp;
     }
 
     public void CmdReady()
@@ -1314,18 +1327,35 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.RPC("RpcServerChangeWeapon", PhotonTargets.MasterClient, index);
     }
 
-    public void CmdDash()
-    {
-        // Play dash animation on other clients
-        photonView.RPC("RpcDash", PhotonTargets.Others, name);
-    }
-
     [PunRPC]
     protected void RpcServerChangeWeapon(int index)
     {
         ServerChangeWeapon(index);
     }
+
+    public void CmdDash()
+    {
+        // Play dash animation on other clients
+        photonView.RPC("RpcDash", PhotonTargets.Others);
+    }
     
+    public void CmdPickup(int viewId)
+    {
+        photonView.RPC("RpcServerPickup", PhotonTargets.MasterClient, viewId);
+    }
+
+    [PunRPC]
+    protected void RpcServerPickup(int viewId)
+    {
+        var go = PhotonView.Find(viewId);
+        if (go == null)
+            return;
+        var pickup = go.GetComponent<PickupEntity>();
+        if (pickup == null)
+            return;
+        pickup.Pickup(this);
+    }
+
     [PunRPC]
     public void RpcReload()
     {
@@ -1487,8 +1517,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             var equipPos = weaponData.equipPosition;
             if (minEquipPos > equipPos)
             {
-                if (defaultWeaponIndex == -1)
-                    defaultWeaponIndex = i;
+                defaultWeaponIndex = equipPos;
                 minEquipPos = equipPos;
             }
 
@@ -1500,6 +1529,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (PhotonNetwork.isMasterClient)
                 photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, equipPos, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
+        selectWeaponIndex = defaultWeaponIndex;
     }
     [PunRPC]
     protected virtual void RpcUpdateSelectWeaponIndex(int selectWeaponIndex)

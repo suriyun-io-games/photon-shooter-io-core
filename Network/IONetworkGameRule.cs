@@ -5,6 +5,7 @@ public class IONetworkGameRule : BaseNetworkGameRule
     public UIGameplay uiGameplayPrefab;
     public CharacterEntity overrideCharacterPrefab;
     public BotEntity overrideBotPrefab;
+    public WeaponData[] startWeapons;
 
     public override bool HasOptionBotCount { get { return true; } }
     public override bool HasOptionMatchTime { get { return false; } }
@@ -14,6 +15,20 @@ public class IONetworkGameRule : BaseNetworkGameRule
     public override bool ShowZeroKillCountWhenDead { get { return true; } }
     public override bool ShowZeroAssistCountWhenDead { get { return true; } }
     public override bool ShowZeroDieCountWhenDead { get { return true; } }
+
+    private string GetStartWeapons()
+    {
+        var selectWeapons = string.Empty;
+        for (var i = 0; i < startWeapons.Length; ++i)
+        {
+            var startWeapon = startWeapons[i];
+            if (!string.IsNullOrEmpty(selectWeapons))
+                selectWeapons += "|";
+            if (startWeapon != null)
+                selectWeapons += startWeapon.GetId();
+        }
+        return selectWeapons;
+    }
 
     protected override BaseNetworkGameCharacter NewBot()
     {
@@ -30,8 +45,22 @@ public class IONetworkGameRule : BaseNetworkGameRule
         botEntity.playerName = bot.name;
         botEntity.selectHead = bot.GetSelectHead();
         botEntity.selectCharacter = bot.GetSelectCharacter();
-        botEntity.selectWeapons = bot.GetSelectWeapons();
+        if (startWeapons != null && startWeapons.Length > 0)
+            botEntity.selectWeapons = GetStartWeapons();
+        else
+            botEntity.selectWeapons = bot.GetSelectWeapons();
         return botEntity;
+    }
+
+    public virtual void NewPlayer(CharacterEntity character, string selectHead, string selectCharacter, string selectWeapons, string extra)
+    {
+        character.selectHead = selectHead;
+        character.selectCharacter = selectCharacter;
+        if (startWeapons != null && startWeapons.Length > 0)
+            character.selectWeapons = GetStartWeapons();
+        else
+            character.selectWeapons = selectWeapons;
+        character.extra = extra;
     }
 
     protected override void EndMatch()

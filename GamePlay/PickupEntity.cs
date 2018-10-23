@@ -67,32 +67,20 @@ public class PickupEntity : PunBehaviour
         {
             if (PhotonNetwork.isMasterClient)
             {
-                bool isPickedup = false;
                 switch (type)
                 {
                     case PickupType.Weapon:
-                        if (gameplayManager.autoPickup)
-                            isPickedup = character.ServerChangeSelectWeapon(weaponData, ammoAmount);
+                        if (gameplayManager.autoPickup || character is BotEntity)
+                            Pickup(character);
                         break;
                     case PickupType.Ammo:
-                        isPickedup = character.ServerFillWeaponAmmo(weaponData, ammoAmount);
+                        Pickup(character);
                         break;
-                }
-                // Destroy this on all clients
-                if (isPickedup)
-                {
-                    isDead = true;
-                    PhotonNetwork.Destroy(gameObject);
-                    if (gameplayManager.respawnPickedupItems)
-                        gameplayManager.SpawnPickup(prefabName);
                 }
             }
 
-            if (!gameplayManager.autoPickup && character.photonView.isMine)
-            {
-                if (!character.PickableEntities.ContainsKey(photonView.viewID))
-                    character.PickableEntities[photonView.viewID] = this;
-            }
+            if (!gameplayManager.autoPickup && character.photonView.isMine && type != PickupType.Ammo)
+                character.PickableEntities.Add(this);
         }
     }
 
@@ -106,16 +94,42 @@ public class PickupEntity : PunBehaviour
         if (character != null && character.Hp > 0)
         {
             if (!gameplayManager.autoPickup && character.photonView.isMine)
-            {
-                if (character.PickableEntities.ContainsKey(photonView.viewID))
-                    character.PickableEntities.Remove(photonView.viewID);
-            }
+                character.PickableEntities.Remove(this);
         }
+    }
+
+    private void OnDestroy()
+    {
+        (BaseNetworkGameCharacter.Local as CharacterEntity).PickableEntities.Remove(this);
     }
 
     [PunRPC]
     protected virtual void RpcUpdatePrefabName(string prefabName)
     {
         _prefabName = prefabName;
+    }
+
+    public bool Pickup(CharacterEntity character)
+    {
+        var gameplayManager = GameplayManager.Singleton;
+        var isPickedup = false;
+        switch (type)
+        {
+            case PickupType.Weapon:
+                isPickedup = character.ServerChangeSelectWeapon(weaponData, ammoAmount);
+                break;
+            case PickupType.Ammo:
+                isPickedup = character.ServerFillWeaponAmmo(weaponData, ammoAmount);
+                break;
+        }
+        // Destroy this on all clients
+        if (isPickedup)
+        {
+            isDead = true;
+            PhotonNetwork.Destroy(gameObject);
+            if (gameplayManager.respawnPickedupItems)
+                gameplayManager.SpawnPickup(prefabName);
+        }
+        return isPickedup;
     }
 }
