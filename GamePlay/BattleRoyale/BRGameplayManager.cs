@@ -30,6 +30,12 @@ public enum BRState : byte
     LastCircle,
 }
 
+public enum BRSpawnType : byte
+{
+    BattleRoyale,
+    Random,
+}
+
 public class BRGameplayManager : GameplayManager
 {
     public const string CUSTOM_ROOM_CURRENT_PATTERN = "iCP";
@@ -49,6 +55,7 @@ public class BRGameplayManager : GameplayManager
     public const string CUSTOM_ROOM_COUNT_ALL_CHARACTERS = "iALL";
 
     [Header("Battle Royale")]
+    public BRSpawnType spawnType;
     public float waitForPlayersDuration;
     public float waitForFirstCircleDuration;
     public SimpleCubeData spawnableArea;
@@ -157,6 +164,7 @@ public class BRGameplayManager : GameplayManager
     private float startShrinkRadius;
     private Vector3 startShrinkCenterPosition;
     private bool isInSpawnableArea;
+    private float secondCollector;
     private BRPattern randomedPattern { get { return patterns[currentPattern]; } }
 
     protected override void OnStartServer()
@@ -177,13 +185,12 @@ public class BRGameplayManager : GameplayManager
         return false;
     }
 
-    public override bool CanReceiveDamage(CharacterEntity character)
+    public override bool CanReceiveDamage(CharacterEntity damageReceiver, CharacterEntity attacker)
     {
         var networkGameplayManager = BaseNetworkGameManager.Singleton;
-        if (networkGameplayManager != null && networkGameplayManager.IsMatchEnded)
-            return false;
-        var extra = character.GetComponent<BRCharacterEntityExtra>();
-        return extra.isSpawned && extra.isGroundOnce;
+        if (base.CanReceiveDamage(damageReceiver, attacker))
+            return damageReceiver.GetComponent<BRCharacterEntityExtra>().isSpawned;
+        return false;
     }
 
     public override bool CanAttack(CharacterEntity character)
@@ -210,9 +217,20 @@ public class BRGameplayManager : GameplayManager
             circleObject.transform.position = currentCenterPosition;
         }
         if (CurrentCountdown > 0)
-            CurrentCountdown -= Time.deltaTime;
+            CurrentCountdown -= Time.unscaledDeltaTime;
         if (SpawnerMoveCountdown > 0)
-            SpawnerMoveCountdown -= Time.deltaTime;
+            SpawnerMoveCountdown -= Time.unscaledDeltaTime;
+        if (PhotonNetwork.isMasterClient)
+        {
+            secondCollector += Time.unscaledDeltaTime;
+            if (secondCollector > 1f)
+            {
+                secondCollector = 0f;
+                currentCountdown -= 1f;
+                if (currentState != BRState.WaitingForPlayers)
+                    spawnerMoveCountdown -= 1f;
+            }
+        }
     }
 
     private void UpdateGameState()
@@ -220,7 +238,6 @@ public class BRGameplayManager : GameplayManager
         if (!PhotonNetwork.isMasterClient)
             return;
 
-        currentCountdown -= Time.deltaTime;
         var networkGameManager = BaseNetworkGameManager.Singleton;
         var gameRule = networkGameManager.gameRule == null ? null : networkGameManager.gameRule as BattleRoyaleNetworkGameRule;
         var characters = networkGameManager.Characters;
@@ -346,8 +363,6 @@ public class BRGameplayManager : GameplayManager
 
         if (currentState != BRState.WaitingForPlayers)
         {
-            spawnerMoveCountdown -= Time.deltaTime;
-
             if (!isInSpawnableArea && IsSpawnerInsideSpawnableArea())
                 isInSpawnableArea = true;
 
@@ -409,8 +424,7 @@ public class BRGameplayManager : GameplayManager
 
     public Vector3 SpawnCharacter(CharacterEntity character)
     {
-        var spawnPosition = character.TempTransform.position = GetSpawnerPosition();
-        return spawnPosition;
+        return character.TempTransform.position = GetSpawnerPosition();
     }
 
     [PunRPC]

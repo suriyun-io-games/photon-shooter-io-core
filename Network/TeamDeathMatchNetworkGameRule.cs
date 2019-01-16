@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DeathMatchNetworkGameRule : IONetworkGameRule
+public class TeamDeathMatchNetworkGameRule : IONetworkGameRule
 {
     public int endMatchCountDown = 10;
     [Tooltip("Rewards for each ranking, sort from high to low (1 - 10)")]
@@ -12,6 +12,7 @@ public class DeathMatchNetworkGameRule : IONetworkGameRule
     public override bool HasOptionMatchTime { get { return true; } }
     public override bool HasOptionMatchKill { get { return true; } }
     public override bool HasOptionMatchScore { get { return false; } }
+    public override bool IsTeamGameplay { get { return true; } }
     public override bool ShowZeroScoreWhenDead { get { return false; } }
     public override bool ShowZeroKillCountWhenDead { get { return false; } }
     public override bool ShowZeroAssistCountWhenDead { get { return false; } }

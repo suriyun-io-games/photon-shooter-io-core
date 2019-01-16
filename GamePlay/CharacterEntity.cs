@@ -557,6 +557,48 @@ public class CharacterEntity : BaseNetworkGameCharacter
         deathTime = Time.unscaledTime;
     }
 
+    protected override void SyncData()
+    {
+        if (!PhotonNetwork.isMasterClient)
+            return;
+        base.SyncData();
+        photonView.RPC("RpcUpdateHp", PhotonTargets.Others, hp);
+        photonView.RPC("RpcUpdateArmor", PhotonTargets.Others, armor);
+        photonView.RPC("RpcUpdateExp", PhotonTargets.Others, exp);
+        photonView.RPC("RpcUpdateLevel", PhotonTargets.Others, level);
+        photonView.RPC("RpcUpdateStatPoint", PhotonTargets.Others, statPoint);
+        photonView.RPC("RpcUpdateWatchAdsCount", PhotonTargets.Others, watchAdsCount);
+        photonView.RPC("RpcUpdateSelectCharacter", PhotonTargets.Others, selectCharacter);
+        photonView.RPC("RpcUpdateSelectHead", PhotonTargets.Others, selectHead);
+        photonView.RPC("RpcUpdateSelectWeapons", PhotonTargets.Others, selectWeapons);
+        photonView.RPC("RpcUpdateSelectWeaponIndex", PhotonTargets.Others, selectWeaponIndex);
+        photonView.RPC("RpcUpdateIsInvincible", PhotonTargets.Others, isInvincible);
+        photonView.RPC("RpcUpdateAttackingActionId", PhotonTargets.Others, attackingActionId);
+        photonView.RPC("RpcUpdateAddStats", PhotonTargets.Others, JsonUtility.ToJson(addStats));
+        photonView.RPC("RpcUpdateExtra", PhotonTargets.Others, extra);
+    }
+
+    public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
+    {
+        if (!PhotonNetwork.isMasterClient)
+            return;
+        base.OnPhotonPlayerConnected(newPlayer);
+        photonView.RPC("RpcUpdateHp", newPlayer, hp);
+        photonView.RPC("RpcUpdateArmor", newPlayer, armor);
+        photonView.RPC("RpcUpdateExp", newPlayer, exp);
+        photonView.RPC("RpcUpdateLevel", newPlayer, level);
+        photonView.RPC("RpcUpdateStatPoint", newPlayer, statPoint);
+        photonView.RPC("RpcUpdateWatchAdsCount", newPlayer, watchAdsCount);
+        photonView.RPC("RpcUpdateSelectCharacter", newPlayer, selectCharacter);
+        photonView.RPC("RpcUpdateSelectHead", newPlayer, selectHead);
+        photonView.RPC("RpcUpdateSelectWeapons", newPlayer, selectWeapons);
+        photonView.RPC("RpcUpdateSelectWeaponIndex", newPlayer, selectWeaponIndex);
+        photonView.RPC("RpcUpdateIsInvincible", newPlayer, isInvincible);
+        photonView.RPC("RpcUpdateAttackingActionId", newPlayer, attackingActionId);
+        photonView.RPC("RpcUpdateAddStats", newPlayer, JsonUtility.ToJson(addStats));
+        photonView.RPC("RpcUpdateExtra", newPlayer, extra);
+    }
+
     protected override void OnStartLocalPlayer()
     {
         if (photonView.isMine)
@@ -574,27 +616,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
             CmdReady();
         }
-    }
-
-    public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
-    {
-        base.OnPhotonPlayerConnected(newPlayer);
-        if (!PhotonNetwork.isMasterClient)
-            return;
-        photonView.RPC("RpcUpdateHp", newPlayer, hp);
-        photonView.RPC("RpcUpdateArmor", newPlayer, armor);
-        photonView.RPC("RpcUpdateExp", newPlayer, exp);
-        photonView.RPC("RpcUpdateLevel", newPlayer, level);
-        photonView.RPC("RpcUpdateStatPoint", newPlayer, statPoint);
-        photonView.RPC("RpcUpdateWatchAdsCount", newPlayer, watchAdsCount);
-        photonView.RPC("RpcUpdateSelectCharacter", newPlayer, selectCharacter);
-        photonView.RPC("RpcUpdateSelectHead", newPlayer, selectHead);
-        photonView.RPC("RpcUpdateSelectWeapons", newPlayer, selectWeapons);
-        photonView.RPC("RpcUpdateSelectWeaponIndex", newPlayer, selectWeaponIndex);
-        photonView.RPC("RpcUpdateIsInvincible", newPlayer, isInvincible);
-        photonView.RPC("RpcUpdateAttackingActionId", newPlayer, attackingActionId);
-        photonView.RPC("RpcUpdateAddStats", newPlayer, JsonUtility.ToJson(addStats));
-        photonView.RPC("RpcUpdateExtra", newPlayer, extra);
     }
 
     protected override void Update()
@@ -973,9 +994,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public void ReceiveDamage(CharacterEntity attacker, int damage)
     {
         var gameplayManager = GameplayManager.Singleton;
-        if (Hp <= 0 || isInvincible || !gameplayManager.CanReceiveDamage(this))
+        if (Hp <= 0 || isInvincible)
             return;
-        
+
+        if (!gameplayManager.CanReceiveDamage(this, attacker))
+            return;
+
         photonView.RPC("RpcEffect", PhotonTargets.All, attacker.photonView.viewID, RPC_EFFECT_DAMAGE_HIT);
         int reduceHp = damage;
         reduceHp -= Mathf.CeilToInt(damage * TotalReduceDamageRate);
@@ -1058,6 +1082,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
         return WeaponData.damagePrefab.GetAttackRange();
     }
 
+    public virtual Vector3 GetSpawnPosition()
+    {
+        return GameplayManager.Singleton.GetCharacterSpawnPosition();
+    }
+
     public void UpdateCharacterModelHiddingState()
     {
         if (characterModel == null)
@@ -1104,7 +1133,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             var gameplayManager = GameplayManager.Singleton;
             ServerInvincible();
             OnSpawn();
-            var position = gameplayManager.GetCharacterSpawnPosition();
+            var position = GetSpawnPosition();
             TempTransform.position = position;
             photonView.RPC("RpcTargetSpawn", photonView.owner, position.x, position.y, position.z);
             ServerRevive();

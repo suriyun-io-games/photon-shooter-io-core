@@ -23,7 +23,7 @@ public class GameNetworkManager : BaseNetworkGameManager
         if (!PhotonNetwork.isMasterClient)
             DamageEntity.InstantiateNewEntity(weaponId, isLeftHandWeapon, position, direction, attackerViewId, addRotationX, addRotationY);
     }
-    
+
     [PunRPC]
     protected override void RpcAddPlayer()
     {

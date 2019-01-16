@@ -87,6 +87,9 @@ public class BRCharacterEntityExtra : PunBehaviour
     private void Update()
     {
         var brGameManager = GameplayManager.Singleton as BRGameplayManager;
+        if (brGameManager == null)
+            return;
+        var botEntity = TempCharacterEntity as BotEntity;
         if (PhotonNetwork.isMasterClient)
         {
             if (brGameManager.currentState != BRState.WaitingForPlayers && Time.realtimeSinceStartup - lastCircleCheckTime >= 1f)
@@ -101,29 +104,18 @@ public class BRCharacterEntityExtra : PunBehaviour
                 if (distance > currentRadius)
                     TempCharacterEntity.Hp -= Mathf.CeilToInt(brGameManager.CurrentCircleHpRateDps * TempCharacterEntity.TotalHp);
                 lastCircleCheckTime = Time.realtimeSinceStartup;
+                if (botEntity != null)
+                {
+                    botEntity.isFixRandomMoveAroundPoint = true;
+                    botEntity.fixRandomMoveAroundPoint = centerPosition;
+                    botEntity.fixRandomMoveAroundDistance = currentRadius;
+                }
             }
         }
-        if (brGameManager.currentState != BRState.WaitingForPlayers && !isSpawned)
+
+        if (brGameManager.currentState == BRState.WaitingForPlayers || isSpawned)
         {
-            if (PhotonNetwork.isMasterClient && !botSpawnCalled && TempCharacterEntity is BotEntity && brGameManager.CanSpawnCharacter(TempCharacterEntity))
-            {
-                botSpawnCalled = true;
-                StartCoroutine(BotSpawnRoutine());
-            }
-            if (TempCharacterEntity.TempRigidbody.useGravity)
-                TempCharacterEntity.TempRigidbody.useGravity = false;
-            if (TempCharacterEntity.enabled)
-                TempCharacterEntity.enabled = false;
-            TempCharacterEntity.IsHidding = true;
-            if (PhotonNetwork.isMasterClient || IsMine)
-            {
-                TempTransform.position = brGameManager.GetSpawnerPosition();
-                TempTransform.rotation = brGameManager.GetSpawnerRotation();
-            }
-        }
-        else if (brGameManager.currentState == BRState.WaitingForPlayers || isSpawned)
-        {
-            if (PhotonNetwork.isMasterClient && !botDeadRemoveCalled && TempCharacterEntity is BotEntity && TempCharacterEntity.IsDead)
+            if (PhotonNetwork.isMasterClient && !botDeadRemoveCalled && botEntity != null && TempCharacterEntity.IsDead)
             {
                 botDeadRemoveCalled = true;
                 StartCoroutine(BotDeadRemoveRoutine());
@@ -133,6 +125,59 @@ public class BRCharacterEntityExtra : PunBehaviour
             if (!TempCharacterEntity.enabled)
                 TempCharacterEntity.enabled = true;
             TempCharacterEntity.IsHidding = false;
+        }
+
+        switch (brGameManager.spawnType)
+        {
+            case BRSpawnType.BattleRoyale:
+                UpdateSpawnBattleRoyale();
+                break;
+            case BRSpawnType.Random:
+                UpdateSpawnRandom();
+                break;
+        }
+    }
+
+    private void UpdateSpawnBattleRoyale()
+    {
+        var brGameManager = GameplayManager.Singleton as BRGameplayManager;
+        if (brGameManager == null)
+            return;
+        var botEntity = TempCharacterEntity as BotEntity;
+        if (brGameManager.currentState != BRState.WaitingForPlayers && !isSpawned)
+        {
+            if (PhotonNetwork.isMasterClient && !botSpawnCalled && botEntity != null && brGameManager.CanSpawnCharacter(TempCharacterEntity))
+            {
+                botSpawnCalled = true;
+                StartCoroutine(BotSpawnRoutine());
+            }
+            // Hide character and disable physics while in airplane
+            if (TempCharacterEntity.TempRigidbody.useGravity)
+                TempCharacterEntity.TempRigidbody.useGravity = false;
+            if (TempCharacterEntity.enabled)
+                TempCharacterEntity.enabled = false;
+            TempCharacterEntity.IsHidding = true;
+            // Move position / rotation follow the airplane
+            if (PhotonNetwork.isMasterClient || IsMine)
+            {
+                TempTransform.position = brGameManager.GetSpawnerPosition();
+                TempTransform.rotation = brGameManager.GetSpawnerRotation();
+            }
+        }
+    }
+
+    private void UpdateSpawnRandom()
+    {
+        var brGameManager = GameplayManager.Singleton as BRGameplayManager;
+        if (brGameManager == null)
+            return;
+
+        if (brGameManager.currentState != BRState.WaitingForPlayers && !isSpawned && PhotonNetwork.isMasterClient)
+        {
+            var position = TempCharacterEntity.GetSpawnPosition();
+            TempCharacterEntity.TempTransform.position = position;
+            TempCharacterEntity.photonView.RPC("RpcTargetSpawn", TempCharacterEntity.photonView.owner, position.x, position.y, position.z);
+            isSpawned = true;
         }
     }
 
