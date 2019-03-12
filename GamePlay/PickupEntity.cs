@@ -100,7 +100,8 @@ public class PickupEntity : PunBehaviour
 
     private void OnDestroy()
     {
-        (BaseNetworkGameCharacter.Local as CharacterEntity).PickableEntities.Remove(this);
+        if (BaseNetworkGameCharacter.Local != null)
+            (BaseNetworkGameCharacter.Local as CharacterEntity).PickableEntities.Remove(this);
     }
 
     [PunRPC]

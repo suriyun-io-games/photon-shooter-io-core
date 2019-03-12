@@ -52,7 +52,7 @@ public class PowerUpEntity : PunBehaviour
                 character.Armor += Mathf.CeilToInt(armor * character.TotalArmorRecoveryRate);
                 character.Exp += Mathf.CeilToInt(exp * character.TotalExpRate);
             }
-            if (character.photonView.isMine)
+            if (character.photonView.isMine && !(character is BotEntity))
             {
                 foreach (var currency in currencies)
                 {
