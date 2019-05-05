@@ -42,6 +42,8 @@ public class GameplayManager : PunBehaviour
     public bool autoPickup = false;
     public bool respawnPickedupItems = true;
     public SpawnArea[] characterSpawnAreas;
+    public SpawnArea[] characterSpawnAreasForTeamA;
+    public SpawnArea[] characterSpawnAreasForTeamB;
     public SpawnArea[] powerUpSpawnAreas;
     public SpawnArea[] pickupSpawnAreas;
     public PowerUpSpawnData[] powerUps;
@@ -145,8 +147,18 @@ public class GameplayManager : PunBehaviour
         }
     }
     
-    public Vector3 GetCharacterSpawnPosition()
+    public Vector3 GetCharacterSpawnPosition(CharacterEntity character)
     {
+        if (character.playerTeam == PunTeams.Team.red &&
+            characterSpawnAreasForTeamA != null &&
+            characterSpawnAreasForTeamA.Length > 0)
+            return characterSpawnAreasForTeamA[Random.Range(0, characterSpawnAreasForTeamA.Length)].GetSpawnPosition();
+
+        if (character.playerTeam == PunTeams.Team.blue &&
+            characterSpawnAreasForTeamB != null &&
+            characterSpawnAreasForTeamB.Length > 0)
+            return characterSpawnAreasForTeamB[Random.Range(0, characterSpawnAreasForTeamB.Length)].GetSpawnPosition();
+
         if (characterSpawnAreas == null || characterSpawnAreas.Length == 0)
             return Vector3.zero;
         return characterSpawnAreas[Random.Range(0, characterSpawnAreas.Length)].GetSpawnPosition();
