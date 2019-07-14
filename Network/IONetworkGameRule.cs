@@ -16,16 +16,13 @@ public class IONetworkGameRule : BaseNetworkGameRule
     public override bool ShowZeroAssistCountWhenDead { get { return true; } }
     public override bool ShowZeroDieCountWhenDead { get { return true; } }
 
-    private string GetStartWeapons()
+    private int[] GetStartWeapons()
     {
-        var selectWeapons = string.Empty;
+        var selectWeapons = new int[startWeapons.Length];
         for (var i = 0; i < startWeapons.Length; ++i)
         {
             var startWeapon = startWeapons[i];
-            if (!string.IsNullOrEmpty(selectWeapons))
-                selectWeapons += "|";
-            if (startWeapon != null)
-                selectWeapons += startWeapon.GetId();
+            selectWeapons[i] = startWeapon.GetHashId();
         }
         return selectWeapons;
     }
@@ -52,7 +49,7 @@ public class IONetworkGameRule : BaseNetworkGameRule
         return botEntity;
     }
 
-    public virtual void NewPlayer(CharacterEntity character, string selectHead, string selectCharacter, string selectWeapons, string extra)
+    public virtual void NewPlayer(CharacterEntity character, int selectHead, int selectCharacter, int[] selectWeapons, string extra)
     {
         character.selectHead = selectHead;
         character.selectCharacter = selectCharacter;

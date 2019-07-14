@@ -11,7 +11,7 @@ public class GameNetworkManager : BaseNetworkGameManager
 
     [PunRPC]
     protected void RpcCharacterAttack(
-        string weaponId,
+        int weaponId,
         bool isLeftHandWeapon,
         Vector3 position,
         Vector3 direction,
@@ -43,19 +43,17 @@ public class GameNetworkManager : BaseNetworkGameManager
         var character = characterGo.GetComponent<CharacterEntity>();
         // Weapons
         var savedWeapons = PlayerSave.GetWeapons();
-        var selectWeapons = "";
+        var selectWeapons = new List<int>();
         foreach (var savedWeapon in savedWeapons)
         {
-            if (!string.IsNullOrEmpty(selectWeapons))
-                selectWeapons += "|";
             var data = GameInstance.GetAvailableWeapon(savedWeapon.Value);
             if (data != null)
-                selectWeapons += data.GetId();
+                selectWeapons.Add(data.GetHashId());
         }
 
-        character.CmdInit(GameInstance.GetAvailableHead(PlayerSave.GetHead()).GetId(),
-            GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter()).GetId(),
-            selectWeapons,
+        character.CmdInit(GameInstance.GetAvailableHead(PlayerSave.GetHead()).GetHashId(),
+            GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter()).GetHashId(),
+            selectWeapons.ToArray(),
             "");
     }
 

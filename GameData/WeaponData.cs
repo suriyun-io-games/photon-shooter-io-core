@@ -56,7 +56,7 @@ public class WeaponData : ItemData
             var direction = attacker.TempTransform.forward;
             var damageEntity = DamageEntity.InstantiateNewEntity(damagePrefab, isLeftHandWeapon, position, direction, attacker.photonView.viewID, addRotationX, addRotationY);
             damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
-            gameNetworkManager.photonView.RPC("RpcCharacterAttack", PhotonTargets.Others, GetId(), isLeftHandWeapon, position, direction, attacker.photonView.viewID, addRotationX, addRotationY);
+            gameNetworkManager.photonView.RPC("RpcCharacterAttack", PhotonTargets.Others, GetHashId(), isLeftHandWeapon, position, direction, attacker.photonView.viewID, addRotationX, addRotationY);
         }
 
         attacker.photonView.RPC("RpcEffect", PhotonTargets.All, attacker.photonView.viewID, CharacterEntity.RPC_EFFECT_DAMAGE_SPAWN);
