@@ -44,6 +44,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected int _selectCharacter;
     protected int _selectHead;
     protected int[] _selectWeapons;
+    protected int[] _selectCustomEquipments;
     protected int _selectWeaponIndex;
     protected bool _isInvincible;
     protected int _attackingActionId;
@@ -222,6 +223,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
+    public virtual int[] selectCustomEquipments
+    {
+        get { return _selectCustomEquipments; }
+        set
+        {
+            if (PhotonNetwork.isMasterClient && value != selectCustomEquipments)
+            {
+                _selectCustomEquipments = value;
+                photonView.RPC("RpcUpdateSelectCustomEquipments", PhotonTargets.All, value);
+            }
+        }
+    }
     public virtual int selectWeaponIndex
     {
         get { return _selectWeaponIndex; }
@@ -302,6 +315,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected CharacterModel characterModel;
     protected CharacterData characterData;
     protected HeadData headData;
+    protected Dictionary<int, CustomEquipmentData> customEquipmentDict = new Dictionary<int, CustomEquipmentData>();
     protected int defaultWeaponIndex = -1;
     protected bool isMobileInput;
     protected Vector2 inputMove;
@@ -404,6 +418,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 stats += characterData.stats;
             if (WeaponData != null)
                 stats += WeaponData.stats;
+            if (customEquipmentDict != null)
+            {
+                foreach (var value in customEquipmentDict.Values)
+                    stats += value.stats;
+            }
             return stats;
         }
     }
@@ -536,6 +555,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         selectCharacter = 0;
         selectHead = 0;
         selectWeapons = new int[0];
+        selectCustomEquipments = new int[0];
         selectWeaponIndex = -1;
         isInvincible = false;
         attackingActionId = -1;
@@ -574,6 +594,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.RPC("RpcUpdateSelectCharacter", PhotonTargets.Others, selectCharacter);
         photonView.RPC("RpcUpdateSelectHead", PhotonTargets.Others, selectHead);
         photonView.RPC("RpcUpdateSelectWeapons", PhotonTargets.Others, selectWeapons);
+        photonView.RPC("RpcUpdateSelectCustomEquipments", PhotonTargets.Others, selectCustomEquipments);
         photonView.RPC("RpcUpdateSelectWeaponIndex", PhotonTargets.Others, selectWeaponIndex);
         photonView.RPC("RpcUpdateIsInvincible", PhotonTargets.Others, isInvincible);
         photonView.RPC("RpcUpdateAttackingActionId", PhotonTargets.Others, attackingActionId);
@@ -595,6 +616,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.RPC("RpcUpdateSelectCharacter", newPlayer, selectCharacter);
         photonView.RPC("RpcUpdateSelectHead", newPlayer, selectHead);
         photonView.RPC("RpcUpdateSelectWeapons", newPlayer, selectWeapons);
+        photonView.RPC("RpcUpdateSelectCustomEquipments", newPlayer, selectCustomEquipments);
         photonView.RPC("RpcUpdateSelectWeaponIndex", newPlayer, selectWeaponIndex);
         photonView.RPC("RpcUpdateIsInvincible", newPlayer, isInvincible);
         photonView.RPC("RpcUpdateAttackingActionId", newPlayer, attackingActionId);
@@ -1254,13 +1276,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
         return updated;
     }
 
-    public void CmdInit(int selectHead, int selectCharacter, int[] selectWeapons, string extra)
+    public void CmdInit(int selectHead, int selectCharacter, int[] selectWeapons, int[] selectCustomEquipments, string extra)
     {
-        photonView.RPC("RpcServerInit", PhotonTargets.MasterClient, selectHead, selectCharacter, selectWeapons, extra);
+        photonView.RPC("RpcServerInit", PhotonTargets.MasterClient, selectHead, selectCharacter, selectWeapons, selectCustomEquipments, extra);
     }
 
     [PunRPC]
-    protected void RpcServerInit(int selectHead, int selectCharacter, int[] selectWeapons, string extra)
+    protected void RpcServerInit(int selectHead, int selectCharacter, int[] selectWeapons, int[] selectCustomEquipments, string extra)
     {
         var alreadyInit = false;
         var networkManager = BaseNetworkGameManager.Singleton;
@@ -1271,7 +1293,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (gameRule != null && gameRule is IONetworkGameRule)
             {
                 var ioGameRule = gameRule as IONetworkGameRule;
-                ioGameRule.NewPlayer(this, selectHead, selectCharacter, selectWeapons, extra);
+                ioGameRule.NewPlayer(this, selectHead, selectCharacter, selectWeapons, selectCustomEquipments, extra);
                 alreadyInit = true;
             }
         }
@@ -1280,6 +1302,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             this.selectHead = selectHead;
             this.selectCharacter = selectCharacter;
             this.selectWeapons = selectWeapons;
+            this.selectCustomEquipments = selectCustomEquipments;
             this.extra = extra;
         }
         Hp = TotalHp;
@@ -1532,6 +1555,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
             characterModel.SetHeadModel(headData.modelObject);
         if (WeaponData != null)
             characterModel.SetWeaponModel(WeaponData.rightHandObject, WeaponData.leftHandObject, WeaponData.shieldObject);
+        if (customEquipmentDict != null)
+        {
+            characterModel.ClearCustomModels();
+            foreach (var value in customEquipmentDict.Values)
+            {
+                characterModel.SetCustomModel(value.containerIndex, value.modelObject);
+            }
+        }
         characterModel.gameObject.SetActive(true);
         UpdateCharacterModelHiddingState();
     }
@@ -1552,8 +1583,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         var minEquipPos = int.MaxValue;
         for (var i = 0; i < _selectWeapons.Length; ++i)
         {
-            var singleData = _selectWeapons[i];
-            var weaponData = GameInstance.GetWeapon(singleData);
+            var weaponData = GameInstance.GetWeapon(_selectWeapons[i]);
 
             if (weaponData == null)
                 continue;
@@ -1574,6 +1604,26 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 photonView.RPC("RpcUpdateEquippedWeapons", PhotonTargets.All, equipPos, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
         selectWeaponIndex = defaultWeaponIndex;
+    }
+    [PunRPC]
+    protected virtual void RpcUpdateSelectCustomEquipments(int[] selectCustomEquipments)
+    {
+        _selectCustomEquipments = selectCustomEquipments;
+        if (characterModel != null)
+            characterModel.ClearCustomModels();
+        customEquipmentDict.Clear();
+        for (var i = 0; i < _selectCustomEquipments.Length; ++i)
+        {
+            var customEquipmentData = GameInstance.GetCustomEquipment(_selectCustomEquipments[i]);
+            if (customEquipmentData != null &&
+                !customEquipmentDict.ContainsKey(customEquipmentData.containerIndex))
+            {
+                customEquipmentDict[customEquipmentData.containerIndex] = customEquipmentData;
+                if (characterModel != null)
+                    characterModel.SetCustomModel(customEquipmentData.containerIndex, customEquipmentData.modelObject);
+            }
+        }
+        UpdateCharacterModelHiddingState();
     }
     [PunRPC]
     protected virtual void RpcUpdateSelectWeaponIndex(int selectWeaponIndex)

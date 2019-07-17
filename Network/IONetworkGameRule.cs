@@ -49,7 +49,7 @@ public class IONetworkGameRule : BaseNetworkGameRule
         return botEntity;
     }
 
-    public virtual void NewPlayer(CharacterEntity character, int selectHead, int selectCharacter, int[] selectWeapons, string extra)
+    public virtual void NewPlayer(CharacterEntity character, int selectHead, int selectCharacter, int[] selectWeapons, int[] selectCustomEquipments, string extra)
     {
         character.selectHead = selectHead;
         character.selectCharacter = selectCharacter;
@@ -57,6 +57,7 @@ public class IONetworkGameRule : BaseNetworkGameRule
             character.selectWeapons = GetStartWeapons();
         else
             character.selectWeapons = selectWeapons;
+        character.selectCustomEquipments = selectCustomEquipments;
         character.extra = extra;
     }
 
