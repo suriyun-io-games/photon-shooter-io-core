@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Photon;
+using Photon.Pun;
 
-public class PickupEntity : PunBehaviour
+public class PickupEntity : MonoBehaviourPunCallbacks
 {
     public const float DestroyDelay = 1f;
     public enum PickupType
@@ -18,10 +18,10 @@ public class PickupEntity : PunBehaviour
         get { return _prefabName; }
         set
         {
-            if (PhotonNetwork.isMasterClient && value != prefabName)
+            if (PhotonNetwork.IsMasterClient && value != prefabName)
             {
                 _prefabName = value;
-                photonView.RPC("RpcUpdatePrefabName", PhotonTargets.Others, value);
+                photonView.RPC("RpcUpdatePrefabName", RpcTarget.Others, value);
             }
         }
     }
@@ -65,7 +65,7 @@ public class PickupEntity : PunBehaviour
         var character = other.GetComponent<CharacterEntity>();
         if (character != null && character.Hp > 0)
         {
-            if (PhotonNetwork.isMasterClient)
+            if (PhotonNetwork.IsMasterClient)
             {
                 switch (type)
                 {
@@ -79,7 +79,7 @@ public class PickupEntity : PunBehaviour
                 }
             }
 
-            if (!gameplayManager.autoPickup && character.photonView.isMine && type != PickupType.Ammo)
+            if (!gameplayManager.autoPickup && character.photonView.IsMine && type != PickupType.Ammo)
                 character.PickableEntities.Add(this);
         }
     }
@@ -93,7 +93,7 @@ public class PickupEntity : PunBehaviour
         var character = other.GetComponent<CharacterEntity>();
         if (character != null && character.Hp > 0)
         {
-            if (!gameplayManager.autoPickup && character.photonView.isMine)
+            if (!gameplayManager.autoPickup && character.photonView.IsMine)
                 character.PickableEntities.Remove(this);
         }
     }

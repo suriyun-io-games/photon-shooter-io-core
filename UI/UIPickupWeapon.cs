@@ -27,6 +27,6 @@ public class UIPickupWeapon : UIWeaponSelectEntry
         var localCharacter = BaseNetworkGameCharacter.Local as CharacterEntity;
         if (localCharacter == null || pickupEntity == null)
             return;
-        localCharacter.CmdPickup(pickupEntity.photonView.viewID);
+        localCharacter.CmdPickup(pickupEntity.photonView.ViewID);
     }
 }

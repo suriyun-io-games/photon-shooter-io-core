@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Photon.Pun;
 
 public class UIMainMenu : MonoBehaviour
 {
@@ -142,7 +143,7 @@ public class UIMainMenu : MonoBehaviour
         PlayerSave.SetCharacter(SelectCharacter);
         PlayerSave.SetHead(SelectHead);
         PlayerSave.SetPlayerName(inputName.text);
-        PhotonNetwork.playerName = PlayerSave.GetPlayerName();
+        PhotonNetwork.LocalPlayer.NickName = PlayerSave.GetPlayerName();
     }
 
     public void UpdateAvailableItems()

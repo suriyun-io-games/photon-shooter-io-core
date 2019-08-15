@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Photon;
+using Photon.Pun;
 
-public class PowerUpEntity : PunBehaviour
+public class PowerUpEntity : MonoBehaviourPunCallbacks
 {
     public const float DestroyDelay = 1f;
     // We're going to respawn this power up so I decide to keep its prefab name to spawning when character triggered
@@ -13,10 +13,10 @@ public class PowerUpEntity : PunBehaviour
         get { return _prefabName; }
         set
         {
-            if (PhotonNetwork.isMasterClient && value != prefabName)
+            if (PhotonNetwork.IsMasterClient && value != prefabName)
             {
                 _prefabName = value;
-                photonView.RPC("RpcUpdatePrefabName", PhotonTargets.Others, value);
+                photonView.RPC("RpcUpdatePrefabName", RpcTarget.Others, value);
             }
         }
     }
@@ -46,13 +46,13 @@ public class PowerUpEntity : PunBehaviour
         {
             isDead = true;
             EffectEntity.PlayEffect(powerUpEffect, character.effectTransform);
-            if (PhotonNetwork.isMasterClient)
+            if (PhotonNetwork.IsMasterClient)
             {
                 character.Hp += Mathf.CeilToInt(hp * character.TotalHpRecoveryRate);
                 character.Armor += Mathf.CeilToInt(armor * character.TotalArmorRecoveryRate);
                 character.Exp += Mathf.CeilToInt(exp * character.TotalExpRate);
             }
-            if (character.photonView.isMine && !(character is BotEntity))
+            if (character.photonView.IsMine && !(character is BotEntity))
             {
                 foreach (var currency in currencies)
                 {
@@ -72,7 +72,7 @@ public class PowerUpEntity : PunBehaviour
         }
         yield return new WaitForSeconds(DestroyDelay);
         // Destroy this on all clients
-        if (PhotonNetwork.isMasterClient)
+        if (PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.Destroy(gameObject);
             GameplayManager.Singleton.SpawnPowerUp(prefabName);

@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using Photon;
+using Photon.Pun;
+using Photon.Pun.UtilityScripts;
 
-public class GameplayManager : PunBehaviour
+public class GameplayManager : MonoBehaviourPunCallbacks
 {
     [System.Serializable]
     public struct RewardCurrency
@@ -84,12 +84,12 @@ public class GameplayManager : PunBehaviour
         PhotonView view = GetComponent<PhotonView>();
         if (view == null)
             view = gameObject.AddComponent<PhotonView>();
-        view.viewID = UNIQUE_VIEW_ID;
+        view.ViewID = UNIQUE_VIEW_ID;
     }
 
     protected virtual void Start()
     {
-        if (PhotonNetwork.isMasterClient)
+        if (PhotonNetwork.IsMasterClient)
             OnStartServer();
     }
 
@@ -118,7 +118,7 @@ public class GameplayManager : PunBehaviour
 
     public void SpawnPowerUp(string prefabName, Vector3 position)
     {
-        if (!PhotonNetwork.isMasterClient || string.IsNullOrEmpty(prefabName))
+        if (!PhotonNetwork.IsMasterClient || string.IsNullOrEmpty(prefabName))
             return;
         PowerUpEntity powerUpPrefab = null;
         if (powerUpEntities.TryGetValue(prefabName, out powerUpPrefab))
@@ -136,7 +136,7 @@ public class GameplayManager : PunBehaviour
 
     public void SpawnPickup(string prefabName, Vector3 position)
     {
-        if (!PhotonNetwork.isMasterClient || string.IsNullOrEmpty(prefabName))
+        if (!PhotonNetwork.IsMasterClient || string.IsNullOrEmpty(prefabName))
             return;
         PickupEntity pickupPrefab = null;
         if (pickupEntities.TryGetValue(prefabName, out pickupPrefab))
