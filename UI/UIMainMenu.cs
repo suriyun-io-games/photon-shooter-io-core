@@ -6,6 +6,12 @@ using Photon.Pun;
 
 public class UIMainMenu : MonoBehaviour
 {
+    public enum PreviewState
+    {
+        Idle,
+        Run,
+        Dead,
+    }
     public Text textSelectCharacter;
     public Text textSelectHead;
     public InputField inputName;
@@ -13,9 +19,11 @@ public class UIMainMenu : MonoBehaviour
     private int selectCharacter = 0;
     private int selectHead = 0;
     // Showing character / items
-    private CharacterModel characterModel;
-    private HeadData headData;
-    private WeaponData weaponData;
+    public CharacterModel characterModel;
+    public CharacterData characterData;
+    public HeadData headData;
+    public WeaponData weaponData;
+    public PreviewState previewState;
 
     public int SelectCharacter
     {
@@ -67,6 +75,41 @@ public class UIMainMenu : MonoBehaviour
         textSelectCharacter.text = (SelectCharacter + 1) + "/" + (MaxCharacter + 1);
         textSelectHead.text = (SelectHead + 1) + "/" + (MaxHead + 1);
 
+        if (characterModel != null)
+        {
+            var animator = characterModel.TempAnimator;
+            switch (previewState)
+            {
+                case PreviewState.Idle:
+                    animator.SetBool("IsDead", false);
+                    animator.SetFloat("JumpSpeed", 0);
+                    animator.SetFloat("MoveSpeed", 0);
+                    animator.SetBool("IsGround", true);
+                    animator.SetBool("IsDash", false);
+                    animator.SetBool("DoAction", false);
+                    animator.SetBool("IsIdle", true);
+                    break;
+                case PreviewState.Run:
+                    animator.SetBool("IsDead", false);
+                    animator.SetFloat("JumpSpeed", 0);
+                    animator.SetFloat("MoveSpeed", 1);
+                    animator.SetBool("IsGround", true);
+                    animator.SetBool("IsDash", false);
+                    animator.SetBool("DoAction", false);
+                    animator.SetBool("IsIdle", false);
+                    break;
+                case PreviewState.Dead:
+                    animator.SetBool("IsDead", true);
+                    animator.SetFloat("JumpSpeed", 0);
+                    animator.SetFloat("MoveSpeed", 0);
+                    animator.SetBool("IsGround", true);
+                    animator.SetBool("IsDash", false);
+                    animator.SetBool("DoAction", false);
+                    animator.SetBool("IsIdle", false);
+                    break;
+            }
+        }
+
         UpdateWeapon();
     }
 
@@ -74,7 +117,7 @@ public class UIMainMenu : MonoBehaviour
     {
         if (characterModel != null)
             Destroy(characterModel.gameObject);
-        var characterData = GameInstance.GetAvailableCharacter(SelectCharacter);
+        characterData = GameInstance.GetAvailableCharacter(SelectCharacter);
         if (characterData == null || characterData.modelObject == null)
             return;
         characterModel = Instantiate(characterData.modelObject, characterModelTransform);
