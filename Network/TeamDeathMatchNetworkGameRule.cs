@@ -71,6 +71,7 @@ public class TeamDeathMatchNetworkGameRule : IONetworkGameRule
         targetCharacter.statPoint = 0;
         targetCharacter.watchAdsCount = 0;
         targetCharacter.addStats = new CharacterStats();
+        targetCharacter.Armor = 0;
 
         return true;
     }
