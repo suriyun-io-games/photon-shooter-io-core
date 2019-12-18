@@ -52,7 +52,9 @@ public class PowerUpEntity : MonoBehaviourPunCallbacks
                 character.Armor += Mathf.CeilToInt(armor * character.TotalArmorRecoveryRate);
                 character.Exp += Mathf.CeilToInt(exp * character.TotalExpRate);
             }
-            if (character.photonView.IsMine && !(character is BotEntity))
+            if (currencies != null && currencies.Length > 0 &&
+                character.photonView.IsMine &&
+                !(character is BotEntity))
             {
                 foreach (var currency in currencies)
                 {
@@ -65,10 +67,13 @@ public class PowerUpEntity : MonoBehaviourPunCallbacks
 
     IEnumerator DestroyRoutine()
     {
-        var renderers = GetComponentsInChildren<Renderer>();
-        foreach (var renderer in renderers)
+        var renderers = gameObject.GetComponentsInChildren<Renderer>();
+        if (renderers != null && renderers.Length > 0)
         {
-            renderer.enabled = false;
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = false;
+            }
         }
         yield return new WaitForSeconds(DestroyDelay);
         // Destroy this on all clients
