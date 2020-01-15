@@ -54,7 +54,7 @@ public class WeaponData : ItemData
             var addRotationX = Random.Range(-staggerY, staggerY);
             var addRotationY = Random.Range(-staggerX, staggerX);
             var position = launchTransform.position;
-            var direction = attacker.TempTransform.forward;
+            var direction = attacker.CacheTransform.forward;
             var damageEntity = DamageEntity.InstantiateNewEntity(damagePrefab, isLeftHandWeapon, position, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
             damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
             gameNetworkManager.photonView.RPC("RpcCharacterAttack", RpcTarget.Others, GetHashId(), isLeftHandWeapon, position, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
