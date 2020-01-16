@@ -10,7 +10,7 @@ public class BotEntity : CharacterEntity
 {
     public enum Characteristic
     {
-        Normal,
+        Aggressive,
         NoneAttack
     }
     protected string botPlayerName;
@@ -130,7 +130,7 @@ public class BotEntity : CharacterEntity
                 targetPosition = new Vector3(
                     enemy.CacheTransform.position.x + Random.Range(-1f, 1f) * detectEnemyDistance,
                     0,
-                    enemy.CacheTransform.position.z + Random.Range(-1, 1f) * detectEnemyDistance);
+                    enemy.CacheTransform.position.z + Random.Range(-1f, 1f) * detectEnemyDistance);
             }
             else if (isFixRandomMoveAroundPoint)
             {
@@ -151,11 +151,17 @@ public class BotEntity : CharacterEntity
         var rotatePosition = targetPosition;
         if (enemy == null || enemy.IsDead || Time.unscaledTime - lastAttackTime >= forgetEnemyDuration)
         {
+            enemy = null;
             // Try find enemy. If found move to target in next frame
-            if (FindEnemy(out enemy))
+            switch (characteristic)
             {
-                lastAttackTime = Time.unscaledTime;
-                lastUpdateMovementTime = Time.unscaledTime - updateMovementDuration;
+                case Characteristic.Aggressive:
+                    if (FindEnemy(out enemy))
+                    {
+                        lastAttackTime = Time.unscaledTime;
+                        lastUpdateMovementTime = Time.unscaledTime - updateMovementDuration;
+                    }
+                    break;
             }
         }
         else
@@ -167,33 +173,35 @@ public class BotEntity : CharacterEntity
         attackingActionId = -1;
         if (enemy != null)
         {
-            if (characteristic == Characteristic.Normal)
+            switch (characteristic)
             {
-                if (Time.unscaledTime - lastAttackTime >= attackDuration &&
+                case Characteristic.Aggressive:
+                    if (Time.unscaledTime - lastAttackTime >= attackDuration &&
                     Vector3.Distance(enemy.CacheTransform.position, CacheTransform.position) < GetAttackRange())
-                {
-                    // Attack when nearby enemy
-                    attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
-                    lastAttackTime = Time.unscaledTime;
-                    if (CurrentEquippedWeapon.currentReserveAmmo > 0)
                     {
-                        if (CurrentEquippedWeapon.currentAmmo == 0)
-                            ServerReload();
-                        else if (attackingActionId < 0)
-                            attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
-                    }
-                    else
-                    {
-                        if (WeaponData != null)
+                        // Attack when nearby enemy
+                        attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
+                        lastAttackTime = Time.unscaledTime;
+                        if (CurrentEquippedWeapon.currentReserveAmmo > 0)
                         {
-                            var nextPosition = WeaponData.equipPosition + 1;
-                            if (nextPosition < equippedWeapons.Length && !equippedWeapons[nextPosition].IsEmpty())
-                                ServerChangeWeapon(nextPosition);
+                            if (CurrentEquippedWeapon.currentAmmo == 0)
+                                ServerReload();
+                            else if (attackingActionId < 0)
+                                attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
                         }
                         else
-                            ServerChangeWeapon(selectWeaponIndex + 1);
+                        {
+                            if (WeaponData != null)
+                            {
+                                var nextPosition = WeaponData.equipPosition + 1;
+                                if (nextPosition < equippedWeapons.Length && !equippedWeapons[nextPosition].IsEmpty())
+                                    ServerChangeWeapon(nextPosition);
+                            }
+                            else
+                                ServerChangeWeapon(selectWeaponIndex + 1);
+                        }
                     }
-                }
+                    break;
             }
         }
 
@@ -270,6 +278,24 @@ public class BotEntity : CharacterEntity
             // Find another position to move in next frame
             lastUpdateMovementTime = Time.unscaledTime - updateMovementDuration;
         }
+    }
+
+    public override bool ReceiveDamage(CharacterEntity attacker, int damage)
+    {
+        if (base.ReceiveDamage(attacker, damage))
+        {
+            switch (characteristic)
+            {
+                case Characteristic.Aggressive:
+                    if (enemy == null)
+                        enemy = attacker;
+                    else if (Random.value > 0.5f)
+                        enemy = attacker;
+                    break;
+            }
+            return true;
+        }
+        return false;
     }
 
     public override void OnSpawn()
