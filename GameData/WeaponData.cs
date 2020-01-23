@@ -60,7 +60,20 @@ public class WeaponData : ItemData
             gameNetworkManager.photonView.RPC("RpcCharacterAttack", RpcTarget.Others, GetHashId(), isLeftHandWeapon, position, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
         }
 
-        attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_DAMAGE_SPAWN);
+        if (damagePrefab.spawnEffectPrefab)
+        {
+            // Instantiate spawn effect at clients
+            attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_DAMAGE_SPAWN);
+        }
+
+        if (damagePrefab.muzzleEffectPrefab)
+        {
+            // Instantiate muzzle effect at clients
+            if (!isLeftHandWeapon)
+                attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_R);
+            else
+                attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_L);
+        }
     }
 
     public void SetupAnimations()
