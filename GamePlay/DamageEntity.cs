@@ -188,7 +188,6 @@ public class DamageEntity : MonoBehaviour
     public static DamageEntity InstantiateNewEntity(
         int weaponId,
         bool isLeftHandWeapon,
-        Vector3 position,
         Vector3 direction,
         int attackerViewId,
         float addRotationX,
@@ -196,14 +195,23 @@ public class DamageEntity : MonoBehaviour
     {
         WeaponData weaponData = null;
         if (GameInstance.Weapons.TryGetValue(weaponId, out weaponData))
-            return InstantiateNewEntity(weaponData.damagePrefab, isLeftHandWeapon, position, direction, attackerViewId, addRotationX, addRotationY);
+        {
+            var damagePrefab = weaponData.damagePrefab;
+            if (damagePrefab)
+                return InstantiateNewEntity(damagePrefab, isLeftHandWeapon, direction, attackerViewId, addRotationX, addRotationY);
+            else
+                Debug.LogWarning("Can't find weapon damage entity prefab: " + weaponId);
+        }
+        else
+        {
+            Debug.LogWarning("Can't find weapon data: " + weaponId);
+        }
         return null;
     }
 
     public static DamageEntity InstantiateNewEntity(
         DamageEntity prefab,
         bool isLeftHandWeapon,
-        Vector3 position,
         Vector3 direction,
         int attackerViewId,
         float addRotationX,
@@ -221,12 +229,13 @@ public class DamageEntity : MonoBehaviour
         {
             Transform launchTransform;
             attacker.GetDamageLaunchTransform(isLeftHandWeapon, out launchTransform);
-            position = launchTransform.position + attacker.CacheTransform.forward * prefab.spawnForwardOffset;
+            Vector3 position = launchTransform.position + attacker.CacheTransform.forward * prefab.spawnForwardOffset;
+            var rotation = Quaternion.LookRotation(direction, Vector3.up);
+            rotation = Quaternion.Euler(rotation.eulerAngles + new Vector3(addRotationX, addRotationY));
+            var result = Instantiate(prefab, position, rotation);
+            result.InitAttackData(isLeftHandWeapon, attackerViewId, addRotationX, addRotationY);
+            return result;
         }
-        var rotation = Quaternion.LookRotation(direction, Vector3.up);
-        rotation = Quaternion.Euler(rotation.eulerAngles + new Vector3(addRotationX, addRotationY));
-        var result = Instantiate(prefab, position, rotation);
-        result.InitAttackData(isLeftHandWeapon, attackerViewId, addRotationX, addRotationY);
-        return result;
+        return null;
     }
 }

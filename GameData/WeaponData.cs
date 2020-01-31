@@ -39,25 +39,37 @@ public class WeaponData : ItemData
 
     public void Launch(CharacterEntity attacker, bool isLeftHandWeapon)
     {
-        if (attacker == null || !PhotonNetwork.IsMasterClient)
+        if (attacker == null || !attacker.photonView.IsMine)
             return;
 
         var gameNetworkManager = GameNetworkManager.Singleton;
 
         for (int i = 0; i < spread; ++i)
         {
-            Transform launchTransform;
-            attacker.GetDamageLaunchTransform(isLeftHandWeapon, out launchTransform);
             // An transform's rotation, position will be set when set `Attacker`
             // So don't worry about them before damage entity going to spawn
             // Velocity also being set when set `Attacker` too.
             var addRotationX = Random.Range(-staggerY, staggerY);
             var addRotationY = Random.Range(-staggerX, staggerX);
-            var position = launchTransform.position;
             var direction = attacker.CacheTransform.forward;
-            var damageEntity = DamageEntity.InstantiateNewEntity(damagePrefab, isLeftHandWeapon, position, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
-            damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
-            gameNetworkManager.photonView.RPC("RpcCharacterAttack", RpcTarget.Others, GetHashId(), isLeftHandWeapon, position, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
+
+            var damageEntity = DamageEntity.InstantiateNewEntity(GetHashId(), isLeftHandWeapon, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
+            if (damageEntity)
+            {
+                damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
+            }
+
+            gameNetworkManager.photonView.RPC("RpcCharacterAttack",
+                RpcTarget.Others,
+                GetHashId(),
+                isLeftHandWeapon,
+                (short)(direction.x * 100f),
+                (short)(direction.y * 100f),
+                (short)(direction.z * 100f),
+                attacker.photonView.ViewID,
+                addRotationX,
+                addRotationY,
+                Mathf.CeilToInt(damage / spread));
         }
 
         if (damagePrefab.spawnEffectPrefab)

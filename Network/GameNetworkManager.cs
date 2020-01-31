@@ -14,15 +14,21 @@ public class GameNetworkManager : BaseNetworkGameManager
     protected void RpcCharacterAttack(
         int weaponId,
         bool isLeftHandWeapon,
-        Vector3 position,
-        Vector3 direction,
+        short dirX,
+        short dirY,
+        short dirZ,
         int attackerViewId,
         float addRotationX,
-        float addRotationY)
+        float addRotationY,
+        int damage)
     {
         // Instantiates damage entities on clients only
-        if (!PhotonNetwork.IsMasterClient)
-            DamageEntity.InstantiateNewEntity(weaponId, isLeftHandWeapon, position, direction, attackerViewId, addRotationX, addRotationY);
+        var direction = new Vector3((float)dirX * 0.01f, (float)dirY * 0.01f, (float)dirZ * 0.01f);
+        var damageEntity = DamageEntity.InstantiateNewEntity(weaponId, isLeftHandWeapon, direction, attackerViewId, addRotationX, addRotationY);
+        if (damageEntity)
+        {
+            damageEntity.weaponDamage = damage;
+        }
     }
 
     [PunRPC]

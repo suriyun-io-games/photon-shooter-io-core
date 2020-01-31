@@ -52,7 +52,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected int[] _selectCustomEquipments;
     protected int _selectWeaponIndex;
     protected bool _isInvincible;
-    protected int _attackingActionId;
+    protected int _attackingActionId = -1;
     protected CharacterStats _addStats;
     protected string _extra;
 
@@ -269,7 +269,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         get { return _attackingActionId; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != attackingActionId)
+            if (photonView.IsMine && value != attackingActionId)
             {
                 _attackingActionId = value;
                 photonView.RPC("RpcUpdateAttackingActionId", RpcTarget.Others, value);
@@ -543,7 +543,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
         selectCustomEquipments = new int[0];
         selectWeaponIndex = -1;
         isInvincible = false;
-        attackingActionId = -1;
         addStats = new CharacterStats();
         extra = "";
     }
@@ -642,7 +641,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (!PhotonNetwork.IsMasterClient && photonView.IsMine && Time.unscaledTime - deathTime >= DISCONNECT_WHEN_NOT_RESPAWN_DURATION)
                 GameNetworkManager.Singleton.LeaveRoom();
 
-            if (PhotonNetwork.IsMasterClient)
+            if (photonView.IsMine)
                 attackingActionId = -1;
         }
 
@@ -900,13 +899,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return;
         
         if (attackingActionId < 0 && photonView.IsMine)
-            CmdAttack();
+        {
+            if (WeaponData != null)
+                attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
+            else
+                attackingActionId = -1;
+        }
     }
 
     protected void StopAttack()
     {
         if (attackingActionId >= 0 && photonView.IsMine)
-            CmdStopAttack();
+            attackingActionId = -1;
     }
 
     protected void Reload()
@@ -946,10 +950,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     launchDuration = animationDuration;
                 yield return new WaitForSeconds(launchDuration / speed);
 
-                // Launch damage entity on server only
-                if (PhotonNetwork.IsMasterClient)
+                // Launch damage entity by owner client then sync to other clients
+                if (photonView.IsMine)
                 {
                     WeaponData.Launch(this, attackAnimation.isAnimationForLeftHandWeapon);
+                }
+                // Manage ammo at master client
+                if (PhotonNetwork.IsMasterClient)
+                {
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.DecreaseAmmo();
                     equippedWeapons[selectWeaponIndex] = equippedWeapon;
@@ -1239,10 +1247,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcInterruptAttack", RpcTarget.Others);
             photonView.RPC("RpcInterruptReload", RpcTarget.Others);
             equippedWeapons[equipPosition] = equippedWeapon;
-            photonView.RPC("RpcUpdateEquippedWeapons", RpcTarget.All, equipPosition, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
-            // Trigger change weapon
             if (selectWeaponIndex == equipPosition)
                 RpcUpdateSelectWeaponIndex(selectWeaponIndex);
+            photonView.RPC("RpcUpdateEquippedWeapons", RpcTarget.All, equipPosition, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
         return updated;
     }
@@ -1324,31 +1331,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected void RpcServerRespawn(bool isWatchedAds)
     {
         ServerRespawn(isWatchedAds);
-    }
-
-    public void CmdAttack()
-    {
-        photonView.RPC("RpcServerAttack", RpcTarget.MasterClient);
-    }
-
-    [PunRPC]
-    protected void RpcServerAttack()
-    {
-        if (WeaponData != null)
-            attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
-        else
-            attackingActionId = -1;
-    }
-
-    public void CmdStopAttack()
-    {
-        photonView.RPC("RpcServerStopAttack", RpcTarget.MasterClient);
-    }
-
-    [PunRPC]
-    protected void RpcServerStopAttack()
-    {
-        attackingActionId = -1;
     }
     
     public void CmdReload()
