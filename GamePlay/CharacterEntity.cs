@@ -309,7 +309,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         get { return hp <= 0; }
     }
-
+    
     public System.Action onDead;
     public readonly HashSet<PickupEntity> PickableEntities = new HashSet<PickupEntity>();
     public readonly EquippedWeapon[] equippedWeapons = new EquippedWeapon[MAX_EQUIPPABLE_WEAPON_AMOUNT];
@@ -343,10 +343,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public bool hasAttackInterruptReload { get; private set; }
     public float deathTime { get; private set; }
     public float invincibleTime { get; private set; }
-    //grenade var
-    public int GrenadeNum = 3;
-    public int MudBombNum = 3;
-    public int totalGrenade, totalMudBomb;
 
     public float FinishReloadTimeRate
     {
@@ -433,7 +429,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return total;
         }
     }
-
+    
     public int TotalMoveSpeed
     {
         get
@@ -854,7 +850,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             inputJump = false;
         }
     }
-
+    
     protected virtual void OnCollisionEnter(Collision collision)
     {
         if (!isGround && collision.impulse.y > 0)
@@ -901,7 +897,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         if (isPlayingAttackAnim || isReloading || !CurrentEquippedWeapon.CanShoot())
             return;
-
+        
         if (attackingActionId < 0 && photonView.IsMine)
         {
             if (WeaponData != null)
@@ -927,9 +923,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     IEnumerator AttackRoutine(int actionId)
     {
-        if (!isPlayingAttackAnim &&
-            !isReloading &&
-            CurrentEquippedWeapon.CanShoot() &&
+        if (!isPlayingAttackAnim && 
+            !isReloading && 
+            CurrentEquippedWeapon.CanShoot() && 
             Hp > 0 &&
             characterModel != null &&
             characterModel.TempAnimator != null)
@@ -1028,7 +1024,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
-
+    
     public virtual bool ReceiveDamage(CharacterEntity attacker, int damage)
     {
         if (Hp <= 0 || isInvincible)
@@ -1082,7 +1078,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         return true;
     }
-
+    
     public void KilledTarget(CharacterEntity target)
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1114,7 +1110,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         Hp += amount;
     }
 
-    public float virtual GetAttackRange()
+    public float GetAttackRange()
     {
         if (WeaponData == null || WeaponData.damagePrefab == null)
             return 0;
@@ -1175,8 +1171,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
             var position = GetSpawnPosition();
             CacheTransform.position = position;
             photonView.RPC("RpcTargetSpawn", photonView.Owner, position.x, position.y, position.z);
-            totalGrenade = GrenadeNum;
-            totalMudBomb = MudBombNum;
             ServerRevive();
         }
     }
@@ -1188,7 +1182,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (CanRespawn(isWatchedAds))
             ServerSpawn(isWatchedAds);
     }
-
+    
     public void ServerRevive()
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1208,7 +1202,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         isDead = false;
         Hp = TotalHp;
     }
-
+    
     public void ServerReload()
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1221,7 +1215,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcReload", RpcTarget.Others);
         }
     }
-
+    
     public void ServerChangeWeapon(int index)
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1236,7 +1230,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.RPC("RpcInterruptReload", RpcTarget.Others);
         }
     }
-
+    
     public bool ServerChangeSelectWeapon(WeaponData weaponData, int ammoAmount)
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1259,7 +1253,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         return updated;
     }
-
+    
     public bool ServerFillWeaponAmmo(WeaponData weaponData, int ammoAmount)
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1338,7 +1332,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         ServerRespawn(isWatchedAds);
     }
-
+    
     public void CmdReload()
     {
         photonView.RPC("RpcServerReload", RpcTarget.MasterClient);
@@ -1349,7 +1343,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         ServerReload();
     }
-
+    
     public void CmdAddAttribute(string name)
     {
         photonView.RPC("RpcServerAddAttribute", RpcTarget.MasterClient, name);
@@ -1369,7 +1363,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
-
+    
     public void CmdChangeWeapon(int index)
     {
         photonView.RPC("RpcServerChangeWeapon", RpcTarget.MasterClient, index);
@@ -1386,7 +1380,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         // Play dash animation on other clients
         photonView.RPC("RpcDash", RpcTarget.Others);
     }
-
+    
     public void CmdPickup(int viewId)
     {
         photonView.RPC("RpcServerPickup", RpcTarget.MasterClient, viewId);
@@ -1432,7 +1426,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         if (triggerObject != null)
         {
-            if (effectType == RPC_EFFECT_DAMAGE_SPAWN ||
+            if (effectType == RPC_EFFECT_DAMAGE_SPAWN || 
                 effectType == RPC_EFFECT_DAMAGE_HIT ||
                 effectType == RPC_EFFECT_MUZZLE_SPAWN_R ||
                 effectType == RPC_EFFECT_MUZZLE_SPAWN_L)
@@ -1498,44 +1492,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         MonetizationManager.Save.AddCurrency(currencyId, amount);
     }
-    public GameObject grenadePrefab;
-    GameObject grenade;
-    public Transform grenadePos;
 
-    [PunRPC]
-    private void ThrowGrenade()
-    {
-        grenade = Instantiate(grenadePrefab, grenadePos.position, transform.rotation);
-        grenade.GetComponent<GrenadeBlast>().mainEntity = this;
-        Rigidbody rb0 = grenade.GetComponent<Rigidbody>();
-        rb0.AddForce((transform.forward + new Vector3(0, 0.6f, 0)) * 7, ForceMode.VelocityChange);
-        totalGrenade--;
-    }
-
-    public GameObject mudBombPrefab;
-    GameObject mudBomb;
-
-    [PunRPC]
-    private void ThrowMudBomb()
-    {
-        mudBomb = Instantiate(mudBombPrefab, grenadePos.position, transform.rotation);
-        mudBomb.GetComponent<GrenadeBlast>().mainEntity = this;
-        Rigidbody rb0 = mudBomb.GetComponent<Rigidbody>();
-        rb0.AddForce((transform.forward + new Vector3(0, 0.6f, 0)) * 7, ForceMode.VelocityChange);
-        totalMudBomb--;
-    }
-
-    public void GrenadeAction()
-    {
-        if (totalGrenade > 0)
-            photonView.RPC("ThrowGrenade", RpcTarget.All);
-    }
-
-    public void MudAction()
-    {
-        if (totalMudBomb > 0)
-            photonView.RPC("ThrowMudBomb", RpcTarget.All);
-    }
     #region Update RPCs
     [PunRPC]
     protected virtual void RpcUpdateHp(int hp)
@@ -1581,15 +1538,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
         characterModel.transform.localPosition = Vector3.zero;
         characterModel.transform.localEulerAngles = Vector3.zero;
         characterModel.transform.localScale = Vector3.one;
-        //cartoon scale
-        if (characterModel.tag == "cartoon")
-        {
-            characterModel.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
-        }
-        else
-        {
-            characterModel.transform.localScale = Vector3.one;
-        }
         if (headData != null)
             characterModel.SetHeadModel(headData.modelObject);
         if (WeaponData != null)

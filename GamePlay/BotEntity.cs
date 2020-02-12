@@ -41,8 +41,6 @@ public class BotEntity : CharacterEntity
         }
     }
     public const float ReachedTargetDistance = 0.1f;
-    [Header("Bot configs")]
-    public float minimumAttackRange = 5f;
     public float updateMovementDuration = 2f;
     public float attackDuration = 0f;
     public float forgetEnemyDuration = 3f;
@@ -346,14 +344,6 @@ public class BotEntity : CharacterEntity
         base.OnSpawn();
         addStats += startAddStats;
         Hp = TotalHp;
-    }
-
-    public override float GetAttackRange()
-    {
-        float range = base.GetAttackRange();
-        if (range < minimumAttackRange)
-            return minimumAttackRange;
-        return range;
     }
 
     [PunRPC]

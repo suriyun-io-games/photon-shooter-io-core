@@ -21,7 +21,6 @@ public class DamageEntity : MonoBehaviour
     private int attackerViewId;
     private float addRotationX;
     private float addRotationY;
-    private float? colliderExtents;
     [HideInInspector]
     public int weaponDamage;
 
@@ -173,21 +172,12 @@ public class DamageEntity : MonoBehaviour
         }
     }
 
-    private float GetColliderExtents()
-    {
-        if (colliderExtents.HasValue)
-            return colliderExtents.Value;
-        var tempObject = Instantiate(gameObject);
-        var tempCollider = tempObject.GetComponent<Collider>();
-        colliderExtents = Mathf.Min(tempCollider.bounds.extents.x, tempCollider.bounds.extents.z);
-        Destroy(tempObject);
-        return colliderExtents.Value;
-    }
-
     public float GetAttackRange()
     {
         // s = v * t
-        return (speed * lifeTime * GameplayManager.REAL_MOVE_SPEED_RATE) + GetColliderExtents();
+        if (!CacheCollider)
+            CacheCollider = GetComponent<Collider>();
+        return (speed * lifeTime * GameplayManager.REAL_MOVE_SPEED_RATE) + Mathf.Min(CacheCollider.bounds.extents.x, CacheCollider.bounds.extents.z);
     }
 
     public Vector3 GetForwardVelocity()
