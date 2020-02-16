@@ -36,7 +36,13 @@ public class BattleRoyaleNetworkGameRule : IONetworkGameRule
 
     public override void OnStartServer(BaseNetworkGameManager manager)
     {
-        base.OnStartServer(manager);
+        networkManager = manager;
+        BotCount = botCount;
+        MatchTime = matchTime;
+        MatchKill = matchKill;
+        MatchScore = matchScore;
+        MatchTimeCountdown = MatchTime;
+        IsMatchEnded = false;
         endMatchCalled = false;
     }
 
