@@ -667,6 +667,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         // Update attack signal
         if (attackSignalObject != null)
             attackSignalObject.SetActive(isPlayingAttackAnim);
+        // TODO: Improve team codes
         if (attackSignalObjectForTeamA != null)
             attackSignalObjectForTeamA.SetActive(isPlayingAttackAnim && playerTeam == 1);
         if (attackSignalObjectForTeamB != null)

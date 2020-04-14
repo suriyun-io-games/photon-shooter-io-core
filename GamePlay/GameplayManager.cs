@@ -149,6 +149,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     
     public Vector3 GetCharacterSpawnPosition(CharacterEntity character)
     {
+        // TODO: Improve team codes
+
         if (character.playerTeam == 1 &&
             characterSpawnAreasForTeamA != null &&
             characterSpawnAreasForTeamA.Length > 0)
