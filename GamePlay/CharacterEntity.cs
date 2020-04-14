@@ -668,9 +668,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (attackSignalObject != null)
             attackSignalObject.SetActive(isPlayingAttackAnim);
         if (attackSignalObjectForTeamA != null)
-            attackSignalObjectForTeamA.SetActive(isPlayingAttackAnim && playerTeam == PunTeams.Team.red);
+            attackSignalObjectForTeamA.SetActive(isPlayingAttackAnim && playerTeam == 1);
         if (attackSignalObjectForTeamB != null)
-            attackSignalObjectForTeamB.SetActive(isPlayingAttackAnim && playerTeam == PunTeams.Team.blue);
+            attackSignalObjectForTeamB.SetActive(isPlayingAttackAnim && playerTeam == 2);
     }
 
     private void FixedUpdate()
