@@ -33,6 +33,16 @@ public class UIGameplay : MonoBehaviour
     private bool isRandomedAttributesShown;
     private bool canRandomAttributes;
 
+    private void Start()
+    {
+        if (BaseNetworkGameCharacter.Local != null)
+        {
+            if (blackFade != null && blackFade.blackFade != null)
+                blackFade.blackFade.alpha = 1;
+            FadeOut();
+        }
+    }
+
     private void OnEnable()
     {
         StartCoroutine(SetupCanRandomAttributes());
