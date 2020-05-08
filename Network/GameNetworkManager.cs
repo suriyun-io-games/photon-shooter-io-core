@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using ExitGames.Client.Photon;
 
 public class GameNetworkManager : BaseNetworkGameManager
 {
@@ -73,6 +74,12 @@ public class GameNetworkManager : BaseNetworkGameManager
             selectWeapons.ToArray(),
             selectCustomEquipments.ToArray(),
             "");
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+        PhotonPeer.RegisterType(typeof(CharacterStats), 0, CharacterStats.SerializeMethod, CharacterStats.DeserializeMethod);
     }
 
     protected override void UpdateScores(NetworkGameScore[] scores)

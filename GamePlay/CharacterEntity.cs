@@ -284,7 +284,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (PhotonNetwork.IsMasterClient)
             {
                 _addStats = value;
-                photonView.RPC("RpcUpdateAddStats", RpcTarget.Others, JsonUtility.ToJson(value));
+                photonView.RPC("RpcUpdateAddStats", RpcTarget.Others, value);
             }
         }
     }
@@ -585,7 +585,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.RPC("RpcUpdateSelectWeaponIndex", RpcTarget.Others, selectWeaponIndex);
         photonView.RPC("RpcUpdateIsInvincible", RpcTarget.Others, isInvincible);
         photonView.RPC("RpcUpdateAttackingActionId", RpcTarget.Others, attackingActionId);
-        photonView.RPC("RpcUpdateAddStats", RpcTarget.Others, JsonUtility.ToJson(addStats));
+        photonView.RPC("RpcUpdateAddStats", RpcTarget.Others, addStats);
         photonView.RPC("RpcUpdateExtra", RpcTarget.Others, extra);
     }
 
@@ -607,7 +607,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.RPC("RpcUpdateSelectWeaponIndex", newPlayer, selectWeaponIndex);
         photonView.RPC("RpcUpdateIsInvincible", newPlayer, isInvincible);
         photonView.RPC("RpcUpdateAttackingActionId", newPlayer, attackingActionId);
-        photonView.RPC("RpcUpdateAddStats", newPlayer, JsonUtility.ToJson(addStats));
+        photonView.RPC("RpcUpdateAddStats", newPlayer, addStats);
         photonView.RPC("RpcUpdateExtra", newPlayer, extra);
     }
 
@@ -1637,9 +1637,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         _attackingActionId = attackingActionId;
     }
     [PunRPC]
-    protected virtual void RpcUpdateAddStats(string json)
+    protected virtual void RpcUpdateAddStats(CharacterStats addStats)
     {
-        _addStats = JsonUtility.FromJson<CharacterStats>(json);
+        _addStats = addStats;
     }
     [PunRPC]
     protected virtual void RpcUpdateExtra(string extra)
