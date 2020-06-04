@@ -251,6 +251,19 @@ public class BotEntity : CharacterEntity
         UpdateStatPoint();
     }
 
+    void OnDrawGizmos()
+    {
+        if (path != null && path.corners != null && path.corners.Length > 0)
+        {
+            for (int i = path.corners.Length - 1; i>= 1; --i)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(path.corners[i], path.corners[i - 1]);
+            }
+        }
+    }
+
+    NavMeshPath path;
     private void GetMovePaths(Vector3 position)
     {
         int areaMask = 0;
@@ -267,21 +280,21 @@ public class BotEntity : CharacterEntity
         }
         NavMeshPath navPath = new NavMeshPath();
         NavMeshHit navHit;
-        if (NavMesh.SamplePosition(position, out navHit, 5f, areaMask) &&
+        if (NavMesh.SamplePosition(position, out navHit, 1000f, areaMask) &&
             NavMesh.CalculatePath(CacheTransform.position, navHit.position, areaMask, navPath))
         {
+            path = navPath;
             navPaths = new Queue<Vector3>(navPath.corners);
             // Dequeue first path it's not require for future movement
             navPaths.Dequeue();
+            // Set movement
+            if (navPaths.Count > 0)
+                targetPosition = navPaths.Dequeue();
         }
-        // Initial queue
-        if (navPaths == null)
-            navPaths = new Queue<Vector3>();
-        // Set first target position immediately
-        if (navPaths.Count > 0)
-            targetPosition = navPaths.Dequeue();
         else
+        {
             targetPosition = position;
+        }
     }
 
     private void UpdateStatPoint()
@@ -319,17 +332,6 @@ public class BotEntity : CharacterEntity
             }
         }
         return false;
-    }
-
-    protected override void OnCollisionStay(Collision collision)
-    {
-        base.OnCollisionStay(collision);
-
-        if (collision.collider.CompareTag("Wall"))
-        {
-            // Find another position to move in next frame
-            lastUpdateMovementTime = Time.unscaledTime - updateMovementDuration;
-        }
     }
 
     public override bool ReceiveDamage(CharacterEntity attacker, int damage)
