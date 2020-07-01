@@ -69,7 +69,7 @@ public class BotEntity : CharacterEntity
     private float randomDashDuration;
     private CharacterEntity enemy;
     private Vector3 dashDirection;
-    private Queue<Vector3> navPaths;
+    private Queue<Vector3> navPaths = new Queue<Vector3>();
     private Vector3 targetPosition;
     private Vector3 lookingPosition;
 
@@ -150,9 +150,9 @@ public class BotEntity : CharacterEntity
             else if (isFixRandomMoveAroundPoint)
             {
                 GetMovePaths(new Vector3(
-                    fixRandomMoveAroundPoint.x + Random.Range(-1f, 1f) * fixRandomMoveAroundDistance,
+                    fixRandomMoveAroundPoint.x + (fixRandomMoveAroundDistance * RandomPosNeg()),
                     0,
-                    fixRandomMoveAroundPoint.z + Random.Range(-1f, 1f) * fixRandomMoveAroundDistance));
+                    fixRandomMoveAroundPoint.z + (fixRandomMoveAroundDistance * RandomPosNeg())));
             }
             else
             {
@@ -235,7 +235,9 @@ public class BotEntity : CharacterEntity
         // Gets a vector that points from the player's position to the target's.
         isReachedTarget = IsReachedTargetPosition();
         if (!isReachedTarget)
+        {
             Move(isDashing ? dashDirection : (targetPosition - CacheTransform.position).normalized);
+        }
 
         if (isReachedTarget)
         {
@@ -255,7 +257,7 @@ public class BotEntity : CharacterEntity
     {
         if (path != null && path.corners != null && path.corners.Length > 0)
         {
-            for (int i = path.corners.Length - 1; i>= 1; --i)
+            for (int i = path.corners.Length - 1; i >= 1; --i)
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawLine(path.corners[i], path.corners[i - 1]);
