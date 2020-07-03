@@ -806,21 +806,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void Move(Vector3 direction)
     {
-        if (direction.magnitude > 0)
+        if (direction.sqrMagnitude > 0)
         {
-            if (direction.magnitude > 1)
+            if (direction.sqrMagnitude > 1)
                 direction = direction.normalized;
+            direction.y = 0;
 
             var targetSpeed = GetMoveSpeed() * (isDashing ? dashMoveSpeedMultiplier : 1f);
             var targetVelocity = direction * targetSpeed;
-
-            // Apply a force that attempts to reach our target velocity
-            Vector3 velocity = CacheRigidbody.velocity;
-            Vector3 velocityChange = (targetVelocity - velocity);
-            velocityChange.x = Mathf.Clamp(velocityChange.x, -targetSpeed, targetSpeed);
-            velocityChange.y = 0;
-            velocityChange.z = Mathf.Clamp(velocityChange.z, -targetSpeed, targetSpeed);
-            CacheRigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
+            var rigidbodyVel = CacheRigidbody.velocity;
+            rigidbodyVel.y = 0;
+            if (rigidbodyVel.sqrMagnitude < 1)
+                CacheTransform.position += targetVelocity * Time.deltaTime;
         }
     }
 
@@ -843,10 +840,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         else
             StopAttack();
 
-        var velocity = CacheRigidbody.velocity;
         if (isGround && inputJump)
         {
-            CacheRigidbody.velocity = new Vector3(velocity.x, CalculateJumpVerticalSpeed(), velocity.z);
+            CacheRigidbody.velocity = new Vector3(CacheRigidbody.velocity.x, CalculateJumpVerticalSpeed(), CacheRigidbody.velocity.z);
             isGround = false;
             inputJump = false;
         }
@@ -883,7 +879,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void GetDamageLaunchTransform(bool isLeftHandWeapon, out Transform launchTransform)
     {
-        launchTransform = null;
         if (characterModel == null || !characterModel.TryGetDamageLaunchTransform(isLeftHandWeapon, out launchTransform))
             launchTransform = damageLaunchTransform;
     }
