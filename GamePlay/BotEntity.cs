@@ -81,6 +81,7 @@ public class BotEntity : CharacterEntity
             ServerSpawn(false);
             lastUpdateMovementTime = Time.unscaledTime - updateMovementDuration;
             lastAttackTime = Time.unscaledTime - attackDuration;
+            dashingTime = Time.unscaledTime;
             randomDashDuration = dashDuration + Random.Range(randomDashDurationMin, randomDashDurationMax);
         }
     }
