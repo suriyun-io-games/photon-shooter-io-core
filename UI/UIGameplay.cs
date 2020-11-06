@@ -28,20 +28,9 @@ public class UIGameplay : MonoBehaviour
     public GameObject pickupWeaponContainer;
     public GameObject matchEndUi;
     public GameObject[] mobileOnlyUis;
-    private bool isNetworkActiveDirty;
     private bool isRespawnShown;
     private bool isRandomedAttributesShown;
     private bool canRandomAttributes;
-
-    private void Start()
-    {
-        if (BaseNetworkGameCharacter.Local != null)
-        {
-            if (blackFade != null && blackFade.blackFade != null)
-                blackFade.blackFade.alpha = 1;
-            FadeOut();
-        }
-    }
 
     private void OnEnable()
     {
