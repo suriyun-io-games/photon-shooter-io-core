@@ -16,7 +16,7 @@ public class PowerUpEntity : MonoBehaviourPunCallbacks
             if (PhotonNetwork.IsMasterClient && value != prefabName)
             {
                 _prefabName = value;
-                photonView.RPC("RpcUpdatePrefabName", RpcTarget.Others, value);
+                photonView.OthersRPC(RpcUpdatePrefabName, value);
             }
         }
     }

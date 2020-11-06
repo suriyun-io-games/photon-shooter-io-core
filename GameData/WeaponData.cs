@@ -75,16 +75,16 @@ public class WeaponData : ItemData
         if (damagePrefab.spawnEffectPrefab)
         {
             // Instantiate spawn effect at clients
-            attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_DAMAGE_SPAWN);
+            attacker.photonView.AllRPC(attacker.RpcEffect, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_DAMAGE_SPAWN);
         }
 
         if (damagePrefab.muzzleEffectPrefab)
         {
             // Instantiate muzzle effect at clients
             if (!isLeftHandWeapon)
-                attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_R);
+                attacker.photonView.AllRPC(attacker.RpcEffect, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_R);
             else
-                attacker.photonView.RPC("RpcEffect", RpcTarget.All, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_L);
+                attacker.photonView.AllRPC(attacker.RpcEffect, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_L);
         }
     }
 

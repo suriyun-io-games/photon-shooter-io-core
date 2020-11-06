@@ -16,44 +16,26 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
             if (PhotonNetwork.IsMasterClient && value != _isSpawned)
             {
                 _isSpawned = value;
-                photonView.RPC("RpcUpdateIsSpawned", RpcTarget.Others, value);
+                photonView.OthersRPC(RpcUpdateIsSpawned, value);
             }
         }
     }
     public bool isGroundOnce { get; private set; }
-
-    private Transform tempTransform;
-    public Transform TempTransform
-    {
-        get
-        {
-            if (tempTransform == null)
-                tempTransform = GetComponent<Transform>();
-            return tempTransform;
-        }
-    }
-
-    private CharacterEntity tempCharacterEntity;
-    public CharacterEntity TempCharacterEntity
-    {
-        get
-        {
-            if (tempCharacterEntity == null)
-                tempCharacterEntity = GetComponent<CharacterEntity>();
-            return tempCharacterEntity;
-        }
-    }
+    public Transform CacheTransform { get; private set; }
+    public CharacterEntity CacheCharacterEntity { get; private set; }
     private float botRandomSpawn;
     private bool botSpawnCalled;
     private bool botDeadRemoveCalled;
     private float lastCircleCheckTime;
 
-    public bool IsMine { get { return photonView.IsMine && !(TempCharacterEntity is BotEntity); } }
+    public bool IsMine { get { return photonView.IsMine && !(CacheCharacterEntity is BotEntity); } }
 
     private void Awake()
     {
-        TempCharacterEntity.enabled = false;
-        TempCharacterEntity.IsHidding = true;
+        CacheTransform = transform;
+        CacheCharacterEntity = GetComponent<CharacterEntity>();
+        CacheCharacterEntity.enabled = false;
+        CacheCharacterEntity.IsHidding = true;
         var brGameManager = GameplayManager.Singleton as BRGameplayManager;
         var maxRandomDist = 30f;
         if (brGameManager != null)
@@ -69,12 +51,12 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
 
     private void Start()
     {
-        TempCharacterEntity.onDead += OnDead;
+        CacheCharacterEntity.onDead += OnDead;
     }
 
     private void OnDestroy()
     {
-        TempCharacterEntity.onDead -= OnDead;
+        CacheCharacterEntity.onDead -= OnDead;
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
@@ -82,7 +64,7 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
         base.OnPlayerEnteredRoom(newPlayer);
         if (!PhotonNetwork.IsMasterClient)
             return;
-        photonView.RPC("RpcUpdateIsSpawned", newPlayer, isSpawned);
+        photonView.TargetRPC(RpcUpdateIsSpawned, newPlayer, isSpawned);
     }
 
     private void Update()
@@ -90,12 +72,12 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
         var brGameManager = GameplayManager.Singleton as BRGameplayManager;
         if (brGameManager == null)
             return;
-        var botEntity = TempCharacterEntity as BotEntity;
+        var botEntity = CacheCharacterEntity as BotEntity;
         if (PhotonNetwork.IsMasterClient)
         {
             if (brGameManager.currentState != BRState.WaitingForPlayers && Time.realtimeSinceStartup - lastCircleCheckTime >= 1f)
             {
-                var currentPosition = TempTransform.position;
+                var currentPosition = CacheTransform.position;
                 currentPosition.y = 0;
 
                 var centerPosition = brGameManager.currentCenterPosition;
@@ -103,7 +85,7 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
                 var distance = Vector3.Distance(currentPosition, centerPosition);
                 var currentRadius = brGameManager.currentRadius;
                 if (distance > currentRadius)
-                    TempCharacterEntity.Hp -= Mathf.CeilToInt(brGameManager.CurrentCircleHpRateDps * TempCharacterEntity.TotalHp);
+                    CacheCharacterEntity.Hp -= Mathf.CeilToInt(brGameManager.CurrentCircleHpRateDps * CacheCharacterEntity.TotalHp);
                 lastCircleCheckTime = Time.realtimeSinceStartup;
                 if (botEntity != null)
                 {
@@ -116,16 +98,16 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
 
         if (brGameManager.currentState == BRState.WaitingForPlayers || isSpawned)
         {
-            if (PhotonNetwork.IsMasterClient && !botDeadRemoveCalled && botEntity != null && TempCharacterEntity.IsDead)
+            if (PhotonNetwork.IsMasterClient && !botDeadRemoveCalled && botEntity != null && CacheCharacterEntity.IsDead)
             {
                 botDeadRemoveCalled = true;
                 StartCoroutine(BotDeadRemoveRoutine());
             }
-            if (!TempCharacterEntity.CacheRigidbody.useGravity)
-                TempCharacterEntity.CacheRigidbody.useGravity = true;
-            if (!TempCharacterEntity.enabled)
-                TempCharacterEntity.enabled = true;
-            TempCharacterEntity.IsHidding = false;
+            if (!CacheCharacterEntity.CacheRigidbody.useGravity)
+                CacheCharacterEntity.CacheRigidbody.useGravity = true;
+            if (!CacheCharacterEntity.enabled)
+                CacheCharacterEntity.enabled = true;
+            CacheCharacterEntity.IsHidding = false;
         }
 
         switch (brGameManager.spawnType)
@@ -144,25 +126,25 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
         var brGameManager = GameplayManager.Singleton as BRGameplayManager;
         if (brGameManager == null)
             return;
-        var botEntity = TempCharacterEntity as BotEntity;
+        var botEntity = CacheCharacterEntity as BotEntity;
         if (brGameManager.currentState != BRState.WaitingForPlayers && !isSpawned)
         {
-            if (PhotonNetwork.IsMasterClient && !botSpawnCalled && botEntity != null && brGameManager.CanSpawnCharacter(TempCharacterEntity))
+            if (PhotonNetwork.IsMasterClient && !botSpawnCalled && botEntity != null && brGameManager.CanSpawnCharacter(CacheCharacterEntity))
             {
                 botSpawnCalled = true;
                 StartCoroutine(BotSpawnRoutine());
             }
             // Hide character and disable physics while in airplane
-            if (TempCharacterEntity.CacheRigidbody.useGravity)
-                TempCharacterEntity.CacheRigidbody.useGravity = false;
-            if (TempCharacterEntity.enabled)
-                TempCharacterEntity.enabled = false;
-            TempCharacterEntity.IsHidding = true;
+            if (CacheCharacterEntity.CacheRigidbody.useGravity)
+                CacheCharacterEntity.CacheRigidbody.useGravity = false;
+            if (CacheCharacterEntity.enabled)
+                CacheCharacterEntity.enabled = false;
+            CacheCharacterEntity.IsHidding = true;
             // Move position / rotation follow the airplane
             if (PhotonNetwork.IsMasterClient || IsMine)
             {
-                TempTransform.position = brGameManager.GetSpawnerPosition();
-                TempTransform.rotation = brGameManager.GetSpawnerRotation();
+                CacheTransform.position = brGameManager.GetSpawnerPosition();
+                CacheTransform.rotation = brGameManager.GetSpawnerRotation();
             }
         }
     }
@@ -175,9 +157,9 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
 
         if (brGameManager.currentState != BRState.WaitingForPlayers && !isSpawned && PhotonNetwork.IsMasterClient)
         {
-            var position = TempCharacterEntity.GetSpawnPosition();
-            TempCharacterEntity.CacheTransform.position = position;
-            TempCharacterEntity.photonView.RPC("RpcTargetSpawn", TempCharacterEntity.photonView.Owner, position.x, position.y, position.z);
+            var position = CacheCharacterEntity.GetSpawnPosition();
+            CacheCharacterEntity.CacheTransform.position = position;
+            CacheCharacterEntity.photonView.TargetRPC(CacheCharacterEntity.RpcTargetSpawn, CacheCharacterEntity.photonView.Owner, position.x, position.y, position.z);
             isSpawned = true;
         }
     }
@@ -200,7 +182,7 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
             return;
         var brGameplayManager = GameplayManager.Singleton as BRGameplayManager;
         if (brGameplayManager != null)
-            photonView.RPC("RpcRankResult", photonView.Owner, BaseNetworkGameManager.Singleton.CountAliveCharacters() + 1);
+            photonView.TargetRPC(RpcRankResult, photonView.Owner, BaseNetworkGameManager.Singleton.CountAliveCharacters() + 1);
     }
 
     IEnumerator ShowRankResultRoutine(int rank)
@@ -231,33 +213,33 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
         if (!isSpawned && brGameplayManager != null)
         {
             isSpawned = true;
-            photonView.RPC("RpcCharacterSpawned", RpcTarget.All, brGameplayManager.SpawnCharacter(TempCharacterEntity) + new Vector3(Random.Range(-2.5f, 2.5f), 0, Random.Range(-2.5f, 2.5f)));
+            photonView.AllRPC(RpcCharacterSpawned, brGameplayManager.SpawnCharacter(CacheCharacterEntity) + new Vector3(Random.Range(-2.5f, 2.5f), 0, Random.Range(-2.5f, 2.5f)));
         }
     }
 
     public void CmdCharacterSpawn()
     {
-        photonView.RPC("RpcServerCharacterSpawn", RpcTarget.MasterClient);
+        photonView.MasterRPC(RpcServerCharacterSpawn);
     }
 
     [PunRPC]
     protected void RpcServerCharacterSpawn()
     {
         var brGameplayManager = GameplayManager.Singleton as BRGameplayManager;
-        if (!isSpawned && brGameplayManager != null && brGameplayManager.CanSpawnCharacter(TempCharacterEntity))
+        if (!isSpawned && brGameplayManager != null && brGameplayManager.CanSpawnCharacter(CacheCharacterEntity))
             ServerCharacterSpawn();
     }
 
     [PunRPC]
     protected void RpcCharacterSpawned(Vector3 spawnPosition)
     {
-        TempCharacterEntity.CacheTransform.position = spawnPosition;
-        TempCharacterEntity.CacheRigidbody.useGravity = true;
-        TempCharacterEntity.CacheRigidbody.isKinematic = false;
+        CacheCharacterEntity.CacheTransform.position = spawnPosition;
+        CacheCharacterEntity.CacheRigidbody.useGravity = true;
+        CacheCharacterEntity.CacheRigidbody.isKinematic = false;
     }
 
     [PunRPC]
-    protected virtual void RpcRankResult(int rank)
+    public virtual void RpcRankResult(int rank)
     {
         if (IsMine)
         {
