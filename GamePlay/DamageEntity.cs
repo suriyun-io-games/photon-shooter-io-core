@@ -134,10 +134,14 @@ public class DamageEntity : MonoBehaviour
             return;
 
         var hitSomeAliveCharacter = false;
-        if (otherCharacter != null && otherCharacter.Hp > 0)
+        if (otherCharacter != null &&
+            otherCharacter.Hp > 0 &&
+            !otherCharacter.isInvincible &&
+            GameplayManager.Singleton.CanReceiveDamage(otherCharacter, attacker))
         {
-            hitSomeAliveCharacter = true;
+            EffectEntity.PlayEffect(hitEffectPrefab, otherCharacter.effectTransform);
             ApplyDamage(otherCharacter);
+            hitSomeAliveCharacter = true;
         }
 
         if (Explode(otherCharacter))
@@ -169,8 +173,14 @@ public class DamageEntity : MonoBehaviour
         {
             hitCharacter = colliders[i].GetComponent<CharacterEntity>();
             // If not character or character is attacker, skip it.
-            if (hitCharacter == null || hitCharacter == otherCharacter || hitCharacter.photonView.ViewID == attackerViewId || hitCharacter.Hp <= 0)
+            if (hitCharacter == null ||
+                hitCharacter == otherCharacter ||
+                hitCharacter.photonView.ViewID == attackerViewId ||
+                hitCharacter.Hp <= 0 ||
+                hitCharacter.isInvincible ||
+                !GameplayManager.Singleton.CanReceiveDamage(hitCharacter, attacker))
                 continue;
+            EffectEntity.PlayEffect(hitEffectPrefab, hitCharacter.effectTransform);
             ApplyDamage(hitCharacter);
             hitSomeAliveCharacter = true;
         }

@@ -39,10 +39,10 @@ public class WeaponData : ItemData
 
     public void Launch(CharacterEntity attacker, bool isLeftHandWeapon)
     {
-        if (attacker == null || !attacker.photonView.IsMine)
+        if (!attacker)
             return;
 
-        var gameNetworkManager = GameNetworkManager.Singleton;
+        EffectEntity.PlayEffect(damagePrefab.spawnEffectPrefab, attacker.effectTransform);
 
         for (int i = 0; i < spread; ++i)
         {
@@ -58,34 +58,11 @@ public class WeaponData : ItemData
             {
                 damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
             }
-
-            gameNetworkManager.photonView.RPC("RpcCharacterAttack",
-                RpcTarget.Others,
-                GetHashId(),
-                isLeftHandWeapon,
-                (short)(direction.x * 100f),
-                (short)(direction.y * 100f),
-                (short)(direction.z * 100f),
-                attacker.photonView.ViewID,
-                addRotationX,
-                addRotationY,
-                Mathf.CeilToInt(damage / spread));
         }
 
-        if (damagePrefab.spawnEffectPrefab)
-        {
-            // Instantiate spawn effect at clients
-            attacker.photonView.AllRPC(attacker.RpcEffect, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_DAMAGE_SPAWN);
-        }
-
-        if (damagePrefab.muzzleEffectPrefab)
-        {
-            // Instantiate muzzle effect at clients
-            if (!isLeftHandWeapon)
-                attacker.photonView.AllRPC(attacker.RpcEffect, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_R);
-            else
-                attacker.photonView.AllRPC(attacker.RpcEffect, attacker.photonView.ViewID, CharacterEntity.RPC_EFFECT_MUZZLE_SPAWN_L);
-        }
+        Transform muzzleTransform;
+        attacker.GetDamageLaunchTransform(isLeftHandWeapon, out muzzleTransform);
+        EffectEntity.PlayEffect(damagePrefab.muzzleEffectPrefab, muzzleTransform);
     }
 
     public void SetupAnimations()

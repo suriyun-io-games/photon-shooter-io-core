@@ -12,27 +12,6 @@ public class GameNetworkManager : BaseNetworkGameManager
     }
 
     [PunRPC]
-    protected void RpcCharacterAttack(
-        int weaponId,
-        bool isLeftHandWeapon,
-        short dirX,
-        short dirY,
-        short dirZ,
-        int attackerViewId,
-        float addRotationX,
-        float addRotationY,
-        int damage)
-    {
-        // Instantiates damage entities on clients only
-        var direction = new Vector3((float)dirX * 0.01f, (float)dirY * 0.01f, (float)dirZ * 0.01f);
-        var damageEntity = DamageEntity.InstantiateNewEntity(weaponId, isLeftHandWeapon, direction, attackerViewId, addRotationX, addRotationY);
-        if (damageEntity)
-        {
-            damageEntity.weaponDamage = damage;
-        }
-    }
-
-    [PunRPC]
     protected override void RpcAddPlayer()
     {
         var position = Vector3.zero;

@@ -635,7 +635,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     IEnumerator DelayReady()
     {
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(0.5f);
         // Add some delay before ready to make sure that it can receive team and game rule
         // TODO: Should improve this (Or remake team system, one which made by Photon is not work well)
         var uiGameplay = FindObjectOfType<UIGameplay>();
@@ -960,11 +960,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     launchDuration = animationDuration;
                 yield return new WaitForSeconds(launchDuration / speed);
 
-                // Launch damage entity by owner client then sync to other clients
-                if (photonView.IsMine)
-                {
-                    WeaponData.Launch(this, attackAnimation.isAnimationForLeftHandWeapon);
-                }
+                WeaponData.Launch(this, attackAnimation.isAnimationForLeftHandWeapon);
                 // Manage ammo at master client
                 if (PhotonNetwork.IsMasterClient)
                 {
@@ -1040,11 +1036,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (Hp <= 0 || isInvincible)
             return false;
 
-        var gameplayManager = GameplayManager.Singleton;
-        if (!gameplayManager.CanReceiveDamage(this, attacker))
+        if (!GameplayManager.Singleton.CanReceiveDamage(this, attacker))
             return false;
 
-        photonView.AllRPC(RpcEffect, attacker.photonView.ViewID, RPC_EFFECT_DAMAGE_HIT);
         int reduceHp = damage;
         reduceHp -= Mathf.CeilToInt(damage * TotalReduceDamageRate);
         if (Armor > 0)
@@ -1175,7 +1169,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return;
         if (Respawn(isWatchedAds))
         {
-            var gameplayManager = GameplayManager.Singleton;
             ServerInvincible();
             OnSpawn();
             var position = GetSpawnPosition();
@@ -1364,9 +1357,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (statPoint > 0)
         {
-            var gameplay = GameplayManager.Singleton;
             CharacterAttributes attribute;
-            if (gameplay.attributes.TryGetValue(name, out attribute))
+            if (GameplayManager.Singleton.attributes.TryGetValue(name, out attribute))
             {
                 addStats += attribute.stats;
                 --statPoint;
@@ -1427,54 +1419,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (!PhotonNetwork.IsMasterClient)
             InterruptReload();
-    }
-
-    [PunRPC]
-    public void RpcEffect(int triggerViewId, byte effectType)
-    {
-        var triggerObject = PhotonView.Find(triggerViewId);
-
-        if (triggerObject != null)
-        {
-            if (effectType == RPC_EFFECT_DAMAGE_SPAWN || 
-                effectType == RPC_EFFECT_DAMAGE_HIT ||
-                effectType == RPC_EFFECT_MUZZLE_SPAWN_R ||
-                effectType == RPC_EFFECT_MUZZLE_SPAWN_L)
-            {
-                var attacker = triggerObject.GetComponent<CharacterEntity>();
-                if (attacker != null &&
-                    attacker.WeaponData != null &&
-                    attacker.WeaponData.damagePrefab != null)
-                {
-                    var damagePrefab = attacker.WeaponData.damagePrefab;
-                    switch (effectType)
-                    {
-                        case RPC_EFFECT_DAMAGE_SPAWN:
-                            EffectEntity.PlayEffect(damagePrefab.spawnEffectPrefab, effectTransform);
-                            break;
-                        case RPC_EFFECT_DAMAGE_HIT:
-                            EffectEntity.PlayEffect(damagePrefab.hitEffectPrefab, effectTransform);
-                            break;
-                        case RPC_EFFECT_MUZZLE_SPAWN_R:
-                            Transform muzzleRTransform;
-                            GetDamageLaunchTransform(false, out muzzleRTransform);
-                            EffectEntity.PlayEffect(damagePrefab.muzzleEffectPrefab, muzzleRTransform);
-                            break;
-                        case RPC_EFFECT_MUZZLE_SPAWN_L:
-                            Transform muzzleLTransform;
-                            GetDamageLaunchTransform(true, out muzzleLTransform);
-                            EffectEntity.PlayEffect(damagePrefab.muzzleEffectPrefab, muzzleLTransform);
-                            break;
-                    }
-                }
-            }
-            else if (effectType == RPC_EFFECT_TRAP_HIT)
-            {
-                var trap = triggerObject.GetComponent<TrapEntity>();
-                if (trap != null)
-                    EffectEntity.PlayEffect(trap.hitEffectPrefab, effectTransform);
-            }
-        }
     }
 
     [PunRPC]
