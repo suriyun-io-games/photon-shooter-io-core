@@ -192,9 +192,8 @@ public class DamageEntity : MonoBehaviour
         // Damage receiving calculation on server only
         if (PhotonNetwork.IsMasterClient)
         {
-            var gameplayManager = GameplayManager.Singleton;
             float damage = weaponDamage * Attacker.TotalWeaponDamageRate;
-            damage += (Random.Range(gameplayManager.minAttackVaryRate, gameplayManager.maxAttackVaryRate) * damage);
+            damage += (Random.Range(GameplayManager.Singleton.minAttackVaryRate, GameplayManager.Singleton.maxAttackVaryRate) * damage);
             target.ReceiveDamage(Attacker, Mathf.CeilToInt(damage));
         }
         target.CacheRigidbody.AddExplosionForce(explosionForce, CacheTransform.position, explosionForceRadius);
