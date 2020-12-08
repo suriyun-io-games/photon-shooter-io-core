@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Photon.Pun;
 
 [System.Serializable]
@@ -471,6 +470,8 @@ public class BRGameplayManager : GameplayManager
                         for (var i = 0; i < pickup.amount; ++i)
                             SpawnPickup(pickup.pickupPrefab.name);
                     }
+                    PhotonNetwork.CurrentRoom.IsOpen = false;
+                    PhotonNetwork.CurrentRoom.IsVisible = false;
                 }
                 break;
             case BRState.WaitingForFirstCircle:

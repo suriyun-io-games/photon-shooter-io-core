@@ -64,10 +64,6 @@ public class IONetworkGameRule : BaseNetworkGameRule
         character.extra = extra;
     }
 
-    protected override void EndMatch()
-    {
-    }
-
     public override bool CanCharacterRespawn(BaseNetworkGameCharacter character, params object[] extraParams)
     {
         var gameplayManager = GameplayManager.Singleton;

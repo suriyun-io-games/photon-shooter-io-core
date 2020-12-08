@@ -302,9 +302,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     }
     #endregion
 
-    [HideInInspector]
-    public int rank = 0;
-
     public override bool IsDead
     {
         get { return hp <= 0; }
