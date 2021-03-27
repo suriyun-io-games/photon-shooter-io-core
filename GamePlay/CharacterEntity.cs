@@ -345,6 +345,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public bool hasAttackInterruptReload { get; private set; }
     public float deathTime { get; private set; }
     public float invincibleTime { get; private set; }
+    public Vector3 aimPosition { get; protected set; }
+    public bool currentActionIsForLeftHand { get; protected set; }
 
     public float FinishReloadTimeRate
     {
@@ -674,6 +676,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             hpText.text = hp + "/" + TotalHp;
         if (levelText != null)
             levelText.text = level.ToString("N0");
+        UpdateAimPosition();
         UpdateAnimation();
         UpdateInput();
         // Update dash state
@@ -701,6 +704,15 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return;
 
         UpdateMovements();
+    }
+
+    protected virtual void UpdateAimPosition()
+    {
+        // Update aim position
+        currentActionIsForLeftHand = CurrentActionIsForLeftHand();
+        Transform launchTransform;
+        GetDamageLaunchTransform(currentActionIsForLeftHand, out launchTransform);
+        aimPosition = launchTransform.position + (CacheTransform.forward * WeaponData.damagePrefab.GetAttackRange());
     }
 
     protected virtual void UpdateAnimation()
@@ -819,6 +831,17 @@ public class CharacterEntity : BaseNetworkGameCharacter
         return TotalMoveSpeed * GameplayManager.REAL_MOVE_SPEED_RATE;
     }
 
+    protected virtual bool CurrentActionIsForLeftHand()
+    {
+        if (attackingActionId >= 0)
+        {
+            AttackAnimation attackAnimation;
+            if (WeaponData.AttackAnimations.TryGetValue(attackingActionId, out attackAnimation))
+                return attackAnimation.isAnimationForLeftHandWeapon;
+        }
+        return false;
+    }
+
     protected virtual void Move(Vector3 direction)
     {
         if (direction.sqrMagnitude > 1)
@@ -934,7 +957,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     launchDuration = animationDuration;
                 yield return new WaitForSeconds(launchDuration / speed);
 
-                WeaponData.Launch(this, attackAnimation.isAnimationForLeftHandWeapon);
+                WeaponData.Launch(this, attackAnimation.isAnimationForLeftHandWeapon, aimPosition);
                 // Manage ammo at master client
                 if (PhotonNetwork.IsMasterClient)
                 {

@@ -139,7 +139,8 @@ public class DamageEntity : MonoBehaviour
             !otherCharacter.isInvincible &&
             GameplayManager.Singleton.CanReceiveDamage(otherCharacter, attacker))
         {
-            EffectEntity.PlayEffect(hitEffectPrefab, otherCharacter.effectTransform);
+            if (!otherCharacter.IsHidding)
+                EffectEntity.PlayEffect(hitEffectPrefab, otherCharacter.effectTransform);
             ApplyDamage(otherCharacter);
             hitSomeAliveCharacter = true;
         }
@@ -180,7 +181,8 @@ public class DamageEntity : MonoBehaviour
                 hitCharacter.isInvincible ||
                 !GameplayManager.Singleton.CanReceiveDamage(hitCharacter, attacker))
                 continue;
-            EffectEntity.PlayEffect(hitEffectPrefab, hitCharacter.effectTransform);
+            if (!hitCharacter.IsHidding)
+                EffectEntity.PlayEffect(hitEffectPrefab, hitCharacter.effectTransform);
             ApplyDamage(hitCharacter);
             hitSomeAliveCharacter = true;
         }
@@ -224,17 +226,17 @@ public class DamageEntity : MonoBehaviour
     public static DamageEntity InstantiateNewEntity(
         int weaponId,
         bool isLeftHandWeapon,
-        Vector3 direction,
+        Vector3 targetPosition,
         int attackerViewId,
         float addRotationX,
         float addRotationY)
     {
-        WeaponData weaponData = null;
+        WeaponData weaponData;
         if (GameInstance.Weapons.TryGetValue(weaponId, out weaponData))
         {
             var damagePrefab = weaponData.damagePrefab;
             if (damagePrefab)
-                return InstantiateNewEntity(damagePrefab, isLeftHandWeapon, direction, attackerViewId, addRotationX, addRotationY);
+                return InstantiateNewEntity(damagePrefab, isLeftHandWeapon, targetPosition, attackerViewId, addRotationX, addRotationY);
             else
                 Debug.LogWarning("Can't find weapon damage entity prefab: " + weaponId);
         }
@@ -248,7 +250,7 @@ public class DamageEntity : MonoBehaviour
     public static DamageEntity InstantiateNewEntity(
         DamageEntity prefab,
         bool isLeftHandWeapon,
-        Vector3 direction,
+        Vector3 targetPosition,
         int attackerViewId,
         float addRotationX,
         float addRotationY)
@@ -266,7 +268,7 @@ public class DamageEntity : MonoBehaviour
             Transform launchTransform;
             attacker.GetDamageLaunchTransform(isLeftHandWeapon, out launchTransform);
             Vector3 position = launchTransform.position + attacker.CacheTransform.forward * prefab.spawnForwardOffset;
-            var rotation = Quaternion.LookRotation(direction, Vector3.up);
+            var rotation = Quaternion.LookRotation(targetPosition, Vector3.up);
             rotation = Quaternion.Euler(rotation.eulerAngles + new Vector3(addRotationX, addRotationY));
             var result = Instantiate(prefab, position, rotation);
             result.InitAttackData(isLeftHandWeapon, attackerViewId, addRotationX, addRotationY);

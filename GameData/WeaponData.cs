@@ -37,23 +37,20 @@ public class WeaponData : ItemData
     public int weaponAnimId;
     public readonly Dictionary<int, AttackAnimation> AttackAnimations = new Dictionary<int, AttackAnimation>();
 
-    public void Launch(CharacterEntity attacker, bool isLeftHandWeapon)
+    public void Launch(CharacterEntity attacker, bool isLeftHandWeapon, Vector3 targetPosition)
     {
         if (!attacker)
             return;
 
-        EffectEntity.PlayEffect(damagePrefab.spawnEffectPrefab, attacker.effectTransform);
+        if (!attacker.IsHidding)
+            EffectEntity.PlayEffect(damagePrefab.spawnEffectPrefab, attacker.effectTransform);
 
         for (int i = 0; i < spread; ++i)
         {
-            // An transform's rotation, position will be set when set `Attacker`
-            // So don't worry about them before damage entity going to spawn
-            // Velocity also being set when set `Attacker` too.
             var addRotationX = Random.Range(-staggerY, staggerY);
             var addRotationY = Random.Range(-staggerX, staggerX);
-            var direction = attacker.CacheTransform.forward;
 
-            var damageEntity = DamageEntity.InstantiateNewEntity(GetHashId(), isLeftHandWeapon, direction, attacker.photonView.ViewID, addRotationX, addRotationY);
+            var damageEntity = DamageEntity.InstantiateNewEntity(GetHashId(), isLeftHandWeapon, targetPosition, attacker.photonView.ViewID, addRotationX, addRotationY);
             if (damageEntity)
             {
                 damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
@@ -62,7 +59,8 @@ public class WeaponData : ItemData
 
         Transform muzzleTransform;
         attacker.GetDamageLaunchTransform(isLeftHandWeapon, out muzzleTransform);
-        EffectEntity.PlayEffect(damagePrefab.muzzleEffectPrefab, muzzleTransform);
+        if (!attacker.IsHidding)
+            EffectEntity.PlayEffect(damagePrefab.muzzleEffectPrefab, muzzleTransform);
     }
 
     public void SetupAnimations()
