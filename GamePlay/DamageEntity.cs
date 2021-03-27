@@ -268,9 +268,10 @@ public class DamageEntity : MonoBehaviour
             Transform launchTransform;
             attacker.GetDamageLaunchTransform(isLeftHandWeapon, out launchTransform);
             Vector3 position = launchTransform.position + attacker.CacheTransform.forward * prefab.spawnForwardOffset;
-            var rotation = Quaternion.LookRotation(targetPosition, Vector3.up);
+            Vector3 dir = targetPosition - position;
+            Quaternion rotation = Quaternion.LookRotation(dir, Vector3.up);
             rotation = Quaternion.Euler(rotation.eulerAngles + new Vector3(addRotationX, addRotationY));
-            var result = Instantiate(prefab, position, rotation);
+            DamageEntity result = Instantiate(prefab, position, rotation);
             result.InitAttackData(isLeftHandWeapon, attackerViewId, addRotationX, addRotationY);
             return result;
         }

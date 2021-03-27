@@ -49,7 +49,6 @@ public class WeaponData : ItemData
         {
             var addRotationX = Random.Range(-staggerY, staggerY);
             var addRotationY = Random.Range(-staggerX, staggerX);
-
             var damageEntity = DamageEntity.InstantiateNewEntity(GetHashId(), isLeftHandWeapon, targetPosition, attacker.photonView.ViewID, addRotationX, addRotationY);
             if (damageEntity)
             {
