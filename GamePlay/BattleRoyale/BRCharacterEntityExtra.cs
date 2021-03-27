@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 [RequireComponent(typeof(CharacterEntity))]
 public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
 {
+    public static float BotSpawnDuration = 0f;
     protected bool _isSpawned;
     public bool isSpawned
     {
@@ -24,6 +25,7 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
     public bool isGroundOnce { get; private set; }
     public Transform CacheTransform { get; private set; }
     public CharacterEntity CacheCharacterEntity { get; private set; }
+    public CharacterMovement CacheCharacterMovement { get; private set; }
     private float botRandomSpawn;
     private bool botSpawnCalled;
     private bool botDeadRemoveCalled;
@@ -37,17 +39,14 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
         CacheCharacterEntity = GetComponent<CharacterEntity>();
         CacheCharacterEntity.enabled = false;
         CacheCharacterEntity.IsHidding = true;
+        CacheCharacterMovement = GetComponent<CharacterMovement>();
         var brGameManager = GameplayManager.Singleton as BRGameplayManager;
-        var maxRandomDist = 30f;
-        if (brGameManager != null)
-            maxRandomDist = brGameManager.spawnerMoveDuration * 0.25f;
-        botRandomSpawn = Random.Range(0f, maxRandomDist);
-
         if (IsMine)
         {
             if (brGameManager != null && brGameManager.currentState != BRState.WaitingForPlayers)
                 GameNetworkManager.Singleton.LeaveRoom();
         }
+        botRandomSpawn = BotSpawnDuration = BotSpawnDuration + Random.Range(0.1f, 1f);
     }
 
     private void Start()
@@ -104,8 +103,8 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
                 botDeadRemoveCalled = true;
                 StartCoroutine(BotDeadRemoveRoutine());
             }
-            if (!CacheCharacterEntity.CacheRigidbody.useGravity)
-                CacheCharacterEntity.CacheRigidbody.useGravity = true;
+            if (!CacheCharacterMovement.enabled)
+                CacheCharacterMovement.enabled = true;
             if (!CacheCharacterEntity.enabled)
                 CacheCharacterEntity.enabled = true;
             CacheCharacterEntity.IsHidding = false;
@@ -136,8 +135,8 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
                 StartCoroutine(BotSpawnRoutine());
             }
             // Hide character and disable physics while in airplane
-            if (CacheCharacterEntity.CacheRigidbody.useGravity)
-                CacheCharacterEntity.CacheRigidbody.useGravity = false;
+            if (CacheCharacterMovement.enabled)
+                CacheCharacterMovement.enabled = false;
             if (CacheCharacterEntity.enabled)
                 CacheCharacterEntity.enabled = false;
             CacheCharacterEntity.IsHidding = true;
@@ -227,8 +226,7 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
     protected void RpcCharacterSpawned(Vector3 spawnPosition)
     {
         CacheCharacterEntity.CacheTransform.position = spawnPosition;
-        CacheCharacterEntity.CacheRigidbody.useGravity = true;
-        CacheCharacterEntity.CacheRigidbody.isKinematic = false;
+        CacheCharacterMovement.enabled = true;
     }
 
     [PunRPC]
