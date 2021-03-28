@@ -119,6 +119,9 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
                 UpdateSpawnRandom();
                 break;
         }
+
+        if (isSpawned && !isGroundOnce && CacheCharacterMovement.IsGrounded)
+            isGroundOnce = true;
     }
 
     private void UpdateSpawnBattleRoyale()
@@ -183,18 +186,6 @@ public class BRCharacterEntityExtra : MonoBehaviourPunCallbacks
         var brGameplayManager = GameplayManager.Singleton as BRGameplayManager;
         if (brGameplayManager != null)
             photonView.TargetRPC(RpcRankResult, photonView.Owner, BaseNetworkGameManager.Singleton.CountAliveCharacters() + 1);
-    }
-
-    protected virtual void OnCollisionEnter(Collision collision)
-    {
-        if (isSpawned && !isGroundOnce && collision.impulse.y > 0)
-            isGroundOnce = true;
-    }
-
-    protected virtual void OnCollisionStay(Collision collision)
-    {
-        if (isSpawned && !isGroundOnce && collision.impulse.y > 0)
-            isGroundOnce = true;
     }
 
     public void ServerCharacterSpawn()
