@@ -192,7 +192,7 @@ public class DamageEntity : MonoBehaviour
     private void ApplyDamage(CharacterEntity target)
     {
         // Damage receiving calculation on server only
-        if (PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsMasterClient && Attacker != null)
         {
             float damage = weaponDamage * Attacker.TotalWeaponDamageRate;
             damage += (Random.Range(GameplayManager.Singleton.minAttackVaryRate, GameplayManager.Singleton.maxAttackVaryRate) * damage);
