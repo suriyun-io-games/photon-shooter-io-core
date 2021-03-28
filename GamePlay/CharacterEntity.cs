@@ -883,7 +883,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         inputJump = false;
     }
 
-    protected void Rotate(Vector2 direction)
+    protected void Rotate(Vector3 direction)
     {
         if (direction.magnitude != 0)
         {
