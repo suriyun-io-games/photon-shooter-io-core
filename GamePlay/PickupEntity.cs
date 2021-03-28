@@ -52,7 +52,7 @@ public class PickupEntity : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
-        gameObject.layer = Physics.IgnoreRaycastLayer;
+        gameObject.layer = GenericUtils.IgnoreRaycastLayer;
         var collider = GetComponent<Collider>();
         collider.isTrigger = true;
     }
@@ -62,7 +62,7 @@ public class PickupEntity : MonoBehaviourPunCallbacks
         if (isDead)
             return;
 
-        if (other.gameObject.layer == Physics.IgnoreRaycastLayer)
+        if (other.gameObject.layer == GenericUtils.IgnoreRaycastLayer)
             return;
 
         var gameplayManager = GameplayManager.Singleton;
@@ -93,7 +93,7 @@ public class PickupEntity : MonoBehaviourPunCallbacks
         if (isDead)
             return;
 
-        if (other.gameObject.layer == Physics.IgnoreRaycastLayer)
+        if (other.gameObject.layer == GenericUtils.IgnoreRaycastLayer)
             return;
 
         var gameplayManager = GameplayManager.Singleton;
