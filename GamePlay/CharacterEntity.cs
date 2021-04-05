@@ -76,6 +76,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected int _attackingActionId = -1;
     protected CharacterStats _addStats;
     protected string _extra;
+    protected Vector3 _aimPosition;
 
     public virtual int hp
     {
@@ -321,6 +322,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
+    public virtual Vector3 aimPosition
+    {
+        get { return _aimPosition; }
+        set
+        {
+            if (photonView.IsMine && value != aimPosition)
+            {
+                _aimPosition = value;
+                photonView.OthersRPC(RpcUpdateAimPosition, value);
+            }
+        }
+    }
     #endregion
 
     public override bool IsDead
@@ -370,7 +383,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public bool hasAttackInterruptReload { get; private set; }
     public float deathTime { get; private set; }
     public float invincibleTime { get; private set; }
-    public Vector3 aimPosition { get; protected set; }
     public bool currentActionIsForLeftHand { get; protected set; }
 
     public float FinishReloadTimeRate
@@ -620,6 +632,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.OthersRPC(RpcUpdateAttackingActionId, attackingActionId);
         photonView.OthersRPC(RpcUpdateAddStats, addStats);
         photonView.OthersRPC(RpcUpdateExtra, extra);
+        photonView.OthersRPC(RpcUpdateAimPosition, aimPosition);
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
@@ -642,6 +655,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.TargetRPC(RpcUpdateAttackingActionId, newPlayer, attackingActionId);
         photonView.TargetRPC(RpcUpdateAddStats, newPlayer, addStats);
         photonView.TargetRPC(RpcUpdateExtra, newPlayer, extra);
+        photonView.TargetRPC(RpcUpdateAimPosition, newPlayer, aimPosition);
     }
 
     protected override void OnStartLocalPlayer()
@@ -795,6 +809,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void UpdateViewMode(bool force = false)
     {
+        if (!photonView.IsMine)
+            return;
+
         if (force || dirtyViewMode != viewMode)
         {
             dirtyViewMode = viewMode;
@@ -818,6 +835,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void UpdateAimPosition()
     {
+        if (!photonView.IsMine || !WeaponData)
+            return;
+
         float attackDist = WeaponData.damagePrefab.GetAttackRange();
         switch (viewMode)
         {
@@ -992,7 +1012,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         // Turn character to move direction
         if (inputDirection.magnitude <= 0 && inputMove.magnitude > 0 || viewMode == ViewMode.ThirdPerson)
             inputDirection = inputMove;
-        if (characterModel.TempAnimator != null && characterModel.TempAnimator.GetBool("DoAction") && viewMode == ViewMode.ThirdPerson)
+        if (characterModel && characterModel.TempAnimator && characterModel.TempAnimator.GetBool("DoAction") && viewMode == ViewMode.ThirdPerson)
             inputDirection = cameraForward;
         if (!IsDead)
             Rotate(isDashing ? dashInputMove : inputDirection);
@@ -1721,6 +1741,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected virtual void RpcUpdateExtra(string extra)
     {
         _extra = extra;
+    }
+    [PunRPC]
+    protected virtual void RpcUpdateAimPosition(Vector3 aimPosition)
+    {
+        _aimPosition = aimPosition;
     }
     [PunRPC]
     protected virtual void RpcUpdateEquippedWeapons(int index, int defaultId, int weaponId, int currentAmmo, int currentReserveAmmo)
