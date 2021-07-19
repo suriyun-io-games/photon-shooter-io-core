@@ -46,6 +46,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public float dashDuration = 1.5f;
     public float dashMoveSpeedMultiplier = 1.5f;
     public float returnToMoveDirectionDelay = 1f;
+    public float endActionDelay = 0.75f;
     [Header("UI")]
     public Transform hpBarContainer;
     public Image hpFillImage;
@@ -374,6 +375,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected Vector3? previousPosition;
     protected Vector3 currentVelocity;
     protected float lastActionTime;
+    protected Coroutine endActionDelayCoroutine;
 
     public float startReloadTime { get; private set; }
     public float reloadDuration { get; private set; }
@@ -1088,16 +1090,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
             characterModel.TempAnimator != null)
         {
             isPlayingAttackAnim = true;
-            var animator = characterModel.TempAnimator;
             AttackAnimation attackAnimation;
             if (WeaponData != null &&
                 WeaponData.AttackAnimations.TryGetValue(actionId, out attackAnimation))
             {
+                if (endActionDelayCoroutine != null)
+                    StopCoroutine(endActionDelayCoroutine);
                 // Play attack animation
-                animator.SetBool("DoAction", false);
-                yield return new WaitForEndOfFrame();
-                animator.SetBool("DoAction", true);
-                animator.SetInteger("ActionID", attackAnimation.actionId);
+                characterModel.TempAnimator.SetBool("DoAction", true);
+                characterModel.TempAnimator.SetInteger("ActionID", attackAnimation.actionId);
+                characterModel.TempAnimator.Play(0, 1, 0);
 
                 // Wait to launch damage entity
                 var speed = attackAnimation.speed;
@@ -1127,12 +1129,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
             // If player still attacking, random new attacking action id
             if (PhotonNetwork.IsMasterClient && attackingActionId >= 0 && WeaponData != null)
                 attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
-            yield return new WaitForEndOfFrame();
 
             // Attack animation ended
-            animator.SetBool("DoAction", false);
+            endActionDelayCoroutine = StartCoroutine(DelayEndAction(endActionDelay));
             isPlayingAttackAnim = false;
         }
+    }
+
+    IEnumerator DelayEndAction(float delay)
+    {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+        characterModel.TempAnimator.SetBool("DoAction", false);
     }
 
     IEnumerator ReloadRoutine()
