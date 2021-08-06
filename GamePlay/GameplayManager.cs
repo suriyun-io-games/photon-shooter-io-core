@@ -26,9 +26,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     public int baseMoveSpeed = 30;
     public float baseWeaponDamageRate = 1f;
     public float baseReduceDamageRate = 0f;
+    public float baseBlockReduceDamageRate = 0.3f;
     public float baseArmorReduceDamage = 0.3f;
     public float maxWeaponDamageRate = 2f;
     public float maxReduceDamageRate = 0.6f;
+    public float maxBlockReduceDamageRate = 0.6f;
     public float maxArmorReduceDamage = 0.6f;
     public int addingStatPoint = 1;
     public float minAttackVaryRate = -0.07f;

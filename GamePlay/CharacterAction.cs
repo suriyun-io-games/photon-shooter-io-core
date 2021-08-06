@@ -4,6 +4,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class CharacterAction : MonoBehaviourPun, IPunObservable
 {
+    public bool IsBlocking { get; set; } = false;
     public int AttackingActionId { get; set; } = -1;
     public Vector3 AimPosition { get; set; } = Vector3.zero;
 
@@ -11,12 +12,16 @@ public class CharacterAction : MonoBehaviourPun, IPunObservable
     {
         if (stream.IsReading)
         {
-            AttackingActionId = (int)stream.ReceiveNext();
+            IsBlocking = (bool)stream.ReceiveNext();
+            if (!IsBlocking)
+                AttackingActionId = (int)stream.ReceiveNext();
             AimPosition = (Vector3)stream.ReceiveNext();
         }
         else
         {
-            stream.SendNext(AttackingActionId);
+            stream.SendNext(IsBlocking);
+            if (!IsBlocking)
+                stream.SendNext(AttackingActionId);
             stream.SendNext(AimPosition);
         }
     }

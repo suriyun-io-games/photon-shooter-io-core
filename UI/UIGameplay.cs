@@ -91,7 +91,7 @@ public class UIGameplay : MonoBehaviour
             }
             if (isRespawnShown)
             {
-                var remainTime = GameplayManager.Singleton.respawnDuration - (Time.unscaledTime - localCharacter.deathTime);
+                var remainTime = GameplayManager.Singleton.respawnDuration - (Time.unscaledTime - localCharacter.DeathTime);
                 var watchAdsRespawnAvailable = GameplayManager.Singleton.watchAdsRespawnAvailable;
                 if (remainTime < 0)
                     remainTime = 0;
@@ -174,7 +174,7 @@ public class UIGameplay : MonoBehaviour
             }
         }
 
-        if (localCharacter.isReloading)
+        if (localCharacter.IsReloading)
         {
             if (reloadTimeContainer != null)
                 reloadTimeContainer.SetActive(true);

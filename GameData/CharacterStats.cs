@@ -8,6 +8,7 @@ public struct CharacterStats
     public int addMoveSpeed;
     public float addWeaponDamageRate;
     public float addReduceDamageRate;
+    public float addBlockReduceDamageRate;
     public float addArmorReduceDamage;
     public float addExpRate;
     public float addScoreRate;
@@ -23,6 +24,7 @@ public struct CharacterStats
         result.addMoveSpeed = a.addMoveSpeed + b.addMoveSpeed;
         result.addWeaponDamageRate = a.addWeaponDamageRate + b.addWeaponDamageRate;
         result.addReduceDamageRate = a.addReduceDamageRate + b.addReduceDamageRate;
+        result.addBlockReduceDamageRate = a.addBlockReduceDamageRate + b.addBlockReduceDamageRate;
         result.addArmorReduceDamage = a.addArmorReduceDamage + b.addArmorReduceDamage;
         result.addExpRate = a.addExpRate + b.addExpRate;
         result.addScoreRate = a.addScoreRate + b.addScoreRate;
@@ -40,6 +42,7 @@ public struct CharacterStats
         result.addMoveSpeed = a.addMoveSpeed - b.addMoveSpeed;
         result.addWeaponDamageRate = a.addWeaponDamageRate - b.addWeaponDamageRate;
         result.addReduceDamageRate = a.addReduceDamageRate - b.addReduceDamageRate;
+        result.addBlockReduceDamageRate = a.addBlockReduceDamageRate - b.addBlockReduceDamageRate;
         result.addArmorReduceDamage = a.addArmorReduceDamage - b.addArmorReduceDamage;
         result.addExpRate = a.addExpRate - b.addExpRate;
         result.addScoreRate = a.addScoreRate - b.addScoreRate;
@@ -57,6 +60,7 @@ public struct CharacterStats
         result.addMoveSpeed = a.addMoveSpeed * b;
         result.addWeaponDamageRate = a.addWeaponDamageRate * b;
         result.addReduceDamageRate = a.addReduceDamageRate * b;
+        result.addBlockReduceDamageRate = a.addBlockReduceDamageRate * b;
         result.addArmorReduceDamage = a.addArmorReduceDamage * b;
         result.addExpRate = a.addExpRate * b;
         result.addScoreRate = a.addScoreRate * b;

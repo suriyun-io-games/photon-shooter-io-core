@@ -28,9 +28,13 @@ public class BotEntity : CharacterEntity
     {
         get
         {
-            CharacterStats addStats = base.SumAddStats;
-            addStats += startAddStats;
-            return addStats;
+            if (refreshingSumAddStats)
+            {
+                CharacterStats addStats = base.SumAddStats;
+                addStats += startAddStats;
+                sumAddStats = addStats;
+            }
+            return sumAddStats;
         }
     }
 
@@ -200,13 +204,13 @@ public class BotEntity : CharacterEntity
         }
 
         // Dashing
-        if (Time.unscaledTime - dashingTime >= randomDashDuration && !isDashing)
+        if (Time.unscaledTime - dashingTime >= randomDashDuration && !IsDashing)
         {
             randomDashDuration = dashDuration + Random.Range(randomDashDurationMin, randomDashDurationMax);
             dashDirection = CacheTransform.forward;
             dashDirection.y = 0;
             dashDirection.Normalize();
-            isDashing = true;
+            IsDashing = true;
             dashingTime = Time.unscaledTime;
             CmdDash();
         }
@@ -215,7 +219,7 @@ public class BotEntity : CharacterEntity
         isReachedTarget = IsReachedTargetPosition();
         if (!isReachedTarget)
         {
-            Move(isDashing ? dashDirection : (targetPosition - CacheTransform.position).normalized);
+            Move(IsDashing ? dashDirection : (targetPosition - CacheTransform.position).normalized);
         }
 
         if (isReachedTarget)

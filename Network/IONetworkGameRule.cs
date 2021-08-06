@@ -68,7 +68,7 @@ public class IONetworkGameRule : BaseNetworkGameRule
     {
         var gameplayManager = GameplayManager.Singleton;
         var targetCharacter = character as CharacterEntity;
-        return gameplayManager.CanRespawn(targetCharacter) && Time.unscaledTime - targetCharacter.deathTime >= gameplayManager.respawnDuration;
+        return gameplayManager.CanRespawn(targetCharacter) && Time.unscaledTime - targetCharacter.DeathTime >= gameplayManager.respawnDuration;
     }
 
     public override bool RespawnCharacter(BaseNetworkGameCharacter character, params object[] extraParams)

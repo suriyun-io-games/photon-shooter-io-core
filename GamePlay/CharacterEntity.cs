@@ -60,6 +60,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public GameObject[] localPlayerObjects;
     public float dashDuration = 1.5f;
     public float dashMoveSpeedMultiplier = 1.5f;
+    public float blockMoveSpeedMultiplier = 0.75f;
     public float returnToMoveDirectionDelay = 1f;
     public float endActionDelay = 0.75f;
     [Header("UI")]
@@ -89,12 +90,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (value <= 0)
             {
                 value = 0;
-                if (!isDead)
+                if (!IsDeadMarked)
                 {
                     photonView.TargetRPC(RpcTargetDead, photonView.Owner);
-                    deathTime = Time.unscaledTime;
+                    DeathTime = Time.unscaledTime;
                     ++syncDieCount.Value;
-                    isDead = true;
+                    IsDeadMarked = true;
                 }
             }
 
@@ -185,6 +186,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
     private SyncExtraRpcComponent syncExtra = null;
     public string Extra { get { return syncExtra.Value; } set { syncExtra.Value = value; } }
 
+    public virtual bool IsBlocking
+    {
+        get { return CacheCharacterAction.IsBlocking; }
+        set { CacheCharacterAction.IsBlocking = value; }
+    }
     public virtual int AttackingActionId
     {
         get { return CacheCharacterAction.AttackingActionId; }
@@ -228,7 +234,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected Vector3 inputDirection;
     protected bool inputAttack;
     protected bool inputJump;
-    protected bool isDashing;
     protected Vector3 dashInputMove;
     protected float dashingTime;
     protected Vector3? previousPosition;
@@ -236,21 +241,21 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected float lastActionTime;
     protected Coroutine endActionDelayCoroutine;
 
-    public float startReloadTime { get; private set; }
-    public float reloadDuration { get; private set; }
-    public bool isReady { get; private set; }
-    public bool isDead { get; private set; }
-    public bool isGrounded { get { return CacheCharacterMovement.IsGrounded; } }
-    public bool isPlayingAttackAnim { get; private set; }
-    public bool isReloading { get; private set; }
-    public bool hasAttackInterruptReload { get; private set; }
-    public float deathTime { get; private set; }
-    public float invincibleTime { get; private set; }
-    public bool currentActionIsForLeftHand { get; protected set; }
+    public float StartReloadTime { get; protected set; }
+    public float ReloadDuration { get; protected set; }
+    public bool IsReady { get; protected set; }
+    public bool IsDeadMarked { get; protected set; }
+    public bool IsGrounded { get { return CacheCharacterMovement.IsGrounded; } }
+    public bool IsPlayingAttackAnim { get; protected set; }
+    public bool IsReloading { get; protected set; }
+    public bool IsDashing { get; protected set; }
+    public bool HasAttackInterruptReload { get; protected set; }
+    public float DeathTime { get; protected set; }
+    public float InvincibleTime { get; protected set; }
 
     public float FinishReloadTimeRate
     {
-        get { return (Time.unscaledTime - startReloadTime) / reloadDuration; }
+        get { return (Time.unscaledTime - StartReloadTime) / ReloadDuration; }
     }
 
     public EquippedWeapon CurrentEquippedWeapon
@@ -299,34 +304,41 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public CharacterMovement CacheCharacterMovement { get; private set; }
     public CharacterAction CacheCharacterAction { get; private set; }
 
+    protected bool refreshingSumAddStats = true;
+    protected CharacterStats sumAddStats = new CharacterStats();
     public virtual CharacterStats SumAddStats
     {
         get
         {
-            var stats = new CharacterStats();
-            if (headData != null)
-                stats += headData.stats;
-            if (characterData != null)
-                stats += characterData.stats;
-            if (WeaponData != null)
-                stats += WeaponData.stats;
-            if (customEquipmentDict != null)
+            if (refreshingSumAddStats)
             {
-                foreach (var value in customEquipmentDict.Values)
+                var addStats = new CharacterStats();
+                if (headData != null)
+                    addStats += headData.stats;
+                if (characterData != null)
+                    addStats += characterData.stats;
+                if (WeaponData != null)
+                    addStats += WeaponData.stats;
+                if (customEquipmentDict != null)
                 {
-                    stats += value.stats;
+                    foreach (var value in customEquipmentDict.Values)
+                    {
+                        addStats += value.stats;
+                    }
                 }
-            }
-            if (AttributeAmounts.Dict != null)
-            {
-                foreach (var kv in AttributeAmounts.Dict)
+                if (AttributeAmounts.Dict != null)
                 {
-                    CharacterAttributes attribute;
-                    if (GameplayManager.Singleton.Attributes.TryGetValue(kv.Key, out attribute))
-                        stats += attribute.stats * kv.Value;
+                    foreach (var kv in AttributeAmounts.Dict)
+                    {
+                        CharacterAttributes attribute;
+                        if (GameplayManager.Singleton.Attributes.TryGetValue(kv.Key, out attribute))
+                            addStats += attribute.stats * kv.Value;
+                    }
                 }
+                sumAddStats = addStats;
+                refreshingSumAddStats = false;
             }
-            return stats;
+            return sumAddStats;
         }
     }
 
@@ -378,6 +390,20 @@ public class CharacterEntity : BaseNetworkGameCharacter
             var total = GameplayManager.Singleton.baseReduceDamageRate + SumAddStats.addReduceDamageRate;
 
             var maxValue = GameplayManager.Singleton.maxReduceDamageRate;
+            if (total < maxValue)
+                return total;
+            else
+                return maxValue;
+        }
+    }
+
+    public float TotalBlockReduceDamageRate
+    {
+        get
+        {
+            var total = GameplayManager.Singleton.baseBlockReduceDamageRate + SumAddStats.addBlockReduceDamageRate;
+
+            var maxValue = GameplayManager.Singleton.maxBlockReduceDamageRate;
             if (total < maxValue)
                 return total;
             else
@@ -486,7 +512,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         {
             localPlayerObject.SetActive(false);
         }
-        deathTime = Time.unscaledTime;
+        DeathTime = Time.unscaledTime;
     }
 
     protected override void OnStartLocalPlayer()
@@ -525,14 +551,17 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         if (Hp <= 0)
         {
-            if (!PhotonNetwork.IsMasterClient && photonView.IsMine && Time.unscaledTime - deathTime >= DISCONNECT_WHEN_NOT_RESPAWN_DURATION)
+            if (!PhotonNetwork.IsMasterClient && photonView.IsMine && Time.unscaledTime - DeathTime >= DISCONNECT_WHEN_NOT_RESPAWN_DURATION)
                 GameNetworkManager.Singleton.LeaveRoom();
 
             if (photonView.IsMine)
+            {
                 AttackingActionId = -1;
+                IsBlocking = false;
+            }
         }
 
-        if (PhotonNetwork.IsMasterClient && IsInvincible && Time.unscaledTime - invincibleTime >= GameplayManager.Singleton.invincibleDuration)
+        if (PhotonNetwork.IsMasterClient && IsInvincible && Time.unscaledTime - InvincibleTime >= GameplayManager.Singleton.invincibleDuration)
             IsInvincible = false;
         if (invincibleEffect != null)
             invincibleEffect.SetActive(IsInvincible);
@@ -551,16 +580,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
         UpdateAnimation();
         UpdateInput();
         // Update dash state
-        if (isDashing && Time.unscaledTime - dashingTime > dashDuration)
-            isDashing = false;
+        if (IsDashing && Time.unscaledTime - dashingTime > dashDuration)
+            IsDashing = false;
         // Update attack signal
         if (attackSignalObject != null)
-            attackSignalObject.SetActive(isPlayingAttackAnim);
+            attackSignalObject.SetActive(IsPlayingAttackAnim);
         // TODO: Improve team codes
         if (attackSignalObjectForTeamA != null)
-            attackSignalObjectForTeamA.SetActive(isPlayingAttackAnim && PlayerTeam == 1);
+            attackSignalObjectForTeamA.SetActive(IsPlayingAttackAnim && PlayerTeam == 1);
         if (attackSignalObjectForTeamB != null)
-            attackSignalObjectForTeamB.SetActive(isPlayingAttackAnim && PlayerTeam == 2);
+            attackSignalObjectForTeamB.SetActive(IsPlayingAttackAnim && PlayerTeam == 2);
     }
 
     private void FixedUpdate()
@@ -676,9 +705,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         {
             case ViewMode.TopDown:
                 // Update aim position
-                currentActionIsForLeftHand = CurrentActionIsForLeftHand();
                 Transform launchTransform;
-                GetDamageLaunchTransform(currentActionIsForLeftHand, out launchTransform);
+                GetDamageLaunchTransform(CurrentActionIsForLeftHand(), out launchTransform);
                 AimPosition = launchTransform.position + (CacheTransform.forward * attackDist);
                 break;
             case ViewMode.ThirdPerson:
@@ -711,6 +739,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             animator.SetFloat("MoveSpeed", 0);
             animator.SetBool("IsGround", true);
             animator.SetBool("IsDash", false);
+            animator.SetBool("IsBlock", false);
         }
         else
         {
@@ -721,7 +750,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
             animator.SetFloat("JumpSpeed", ySpeed);
             animator.SetFloat("MoveSpeed", xzMagnitude);
             animator.SetBool("IsGround", Mathf.Abs(ySpeed) < 0.5f);
-            animator.SetBool("IsDash", isDashing);
+            animator.SetBool("IsDash", IsDashing);
+            animator.SetBool("IsBlock", IsBlocking);
         }
 
         if (WeaponData != null)
@@ -729,7 +759,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         animator.SetBool("IsIdle", !animator.GetBool("IsDead") && !animator.GetBool("DoAction") && animator.GetBool("IsGround"));
 
-        if (AttackingActionId >= 0 && !isPlayingAttackAnim)
+        if (AttackingActionId >= 0 && !IsPlayingAttackAnim)
             StartCoroutine(AttackRoutine(AttackingActionId));
     }
 
@@ -774,14 +804,17 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 inputMove += cameraRight * InputManager.GetAxis("Horizontal", false);
             }
 
-            // Jump
-            if (!IsDead && !inputJump)
-                inputJump = InputManager.GetButtonDown("Jump") && isGrounded && !isDashing;
+            // Bloacking
+            IsBlocking = !IsDead && !IsReloading && !IsDashing && AttackingActionId < 0 && IsGrounded && InputManager.GetButton("Block");
 
-            if (!isDashing)
+            // Jump
+            if (!IsDead && !IsBlocking && !inputJump)
+                inputJump = InputManager.GetButtonDown("Jump") && IsGrounded && !IsDashing;
+                
+            if (!IsBlocking && !IsDashing)
             {
-                UpdateInputDirection_TopDown(canAttack);
-                UpdateInputDirection_ThirdPerson(canAttack);
+                UpdateInputDirection_TopDown(!IsBlocking && canAttack);
+                UpdateInputDirection_ThirdPerson(!IsBlocking && canAttack);
                 if (!IsDead)
                 {
                     if (InputManager.GetButtonDown("Reload"))
@@ -790,10 +823,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
                         CurrentEquippedWeapon.currentAmmo == 0 &&
                         CurrentEquippedWeapon.CanReload())
                         Reload();
+                    IsDashing = InputManager.GetButtonDown("Dash") && IsGrounded;
                 }
-                if (!IsDead)
-                    isDashing = InputManager.GetButtonDown("Dash") && isGrounded;
-                if (isDashing)
+                if (IsDashing)
                 {
                     if (isMobileInput)
                         dashInputMove = inputMove.normalized;
@@ -829,7 +861,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             direction = direction.normalized;
         direction.y = 0;
 
-        var targetSpeed = GetMoveSpeed() * (isDashing ? dashMoveSpeedMultiplier : 1f);
+        var targetSpeed = GetMoveSpeed() * (IsBlocking ? blockMoveSpeedMultiplier : (IsDashing ? dashMoveSpeedMultiplier : 1f));
         CacheCharacterMovement.UpdateMovement(Time.deltaTime, targetSpeed, direction, inputJump);
     }
 
@@ -841,16 +873,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
         var moveDirection = inputMove;
         var dashDirection = dashInputMove;
 
-        Move(isDashing ? dashDirection : moveDirection);
+        Move(IsDashing ? dashDirection : moveDirection);
         // Turn character to move direction
         if (inputDirection.magnitude <= 0 && inputMove.magnitude > 0 || viewMode == ViewMode.ThirdPerson)
             inputDirection = inputMove;
         if (characterModel && characterModel.CacheAnimator && (characterModel.CacheAnimator.GetBool("DoAction") || Time.unscaledTime - lastActionTime <= returnToMoveDirectionDelay) && viewMode == ViewMode.ThirdPerson)
             inputDirection = cameraForward;
         if (!IsDead)
-            Rotate(isDashing ? dashInputMove : inputDirection);
+            Rotate(IsDashing ? dashInputMove : inputDirection);
 
-        if (!IsDead)
+        if (!IsDead && !IsBlocking)
         {
             if (inputAttack && GameplayManager.Singleton.CanAttack(this))
                 Attack();
@@ -878,10 +910,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (photonView.IsMine)
         {
             // If attacking while reloading, determines that it is reload interrupting
-            if (isReloading && FinishReloadTimeRate > 0.8f)
-                hasAttackInterruptReload = true;
+            if (IsReloading && FinishReloadTimeRate > 0.8f)
+                HasAttackInterruptReload = true;
         }
-        if (isPlayingAttackAnim || isReloading || !CurrentEquippedWeapon.CanShoot())
+
+        if (IsPlayingAttackAnim || IsReloading || IsBlocking || !CurrentEquippedWeapon.CanShoot())
             return;
 
         if (AttackingActionId < 0 && photonView.IsMine)
@@ -901,7 +934,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected void Reload()
     {
-        if (isPlayingAttackAnim || isReloading || !CurrentEquippedWeapon.CanReload())
+        if (IsPlayingAttackAnim || IsReloading || !CurrentEquippedWeapon.CanReload())
             return;
         if (photonView.IsMine)
             CmdReload();
@@ -909,14 +942,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     IEnumerator AttackRoutine(int actionId)
     {
-        if (!isPlayingAttackAnim &&
-            !isReloading &&
+        if (!IsPlayingAttackAnim &&
+            !IsReloading &&
             CurrentEquippedWeapon.CanShoot() &&
             Hp > 0 &&
             characterModel != null &&
             characterModel.CacheAnimator != null)
         {
-            isPlayingAttackAnim = true;
+            IsPlayingAttackAnim = true;
             AttackAnimation attackAnimation;
             if (WeaponData != null &&
                 WeaponData.AttackAnimations.TryGetValue(actionId, out attackAnimation))
@@ -959,7 +992,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
             // Attack animation ended
             endActionDelayCoroutine = StartCoroutine(DelayEndAction(endActionDelay));
-            isPlayingAttackAnim = false;
+            IsPlayingAttackAnim = false;
         }
     }
 
@@ -972,17 +1005,17 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     IEnumerator ReloadRoutine()
     {
-        hasAttackInterruptReload = false;
-        if (!isReloading && CurrentEquippedWeapon.CanReload())
+        HasAttackInterruptReload = false;
+        if (!IsReloading && CurrentEquippedWeapon.CanReload())
         {
-            isReloading = true;
+            IsReloading = true;
             if (WeaponData != null)
             {
-                reloadDuration = WeaponData.reloadDuration;
-                startReloadTime = Time.unscaledTime;
+                ReloadDuration = WeaponData.reloadDuration;
+                StartReloadTime = Time.unscaledTime;
                 if (WeaponData.clipOutFx != null && AudioManager.Singleton != null)
                     AudioSource.PlayClipAtPoint(WeaponData.clipOutFx, CacheTransform.position, AudioManager.Singleton.sfxVolumeSetting.Level);
-                yield return new WaitForSeconds(reloadDuration);
+                yield return new WaitForSeconds(ReloadDuration);
                 if (PhotonNetwork.IsMasterClient)
                 {
                     var equippedWeapon = CurrentEquippedWeapon;
@@ -997,14 +1030,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (PhotonNetwork.IsMasterClient && AttackingActionId >= 0 && WeaponData != null)
                 AttackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
             yield return new WaitForEndOfFrame();
-            isReloading = false;
+            IsReloading = false;
             if (photonView.IsMine)
             {
                 // If weapon is reload one ammo at a time (like as shotgun), automatically reload more bullets
                 // When there is no attack interrupt while reload
                 if (WeaponData != null && WeaponData.reloadOneAmmoAtATime && CurrentEquippedWeapon.CanReload())
                 {
-                    if (!hasAttackInterruptReload)
+                    if (!HasAttackInterruptReload)
                         Reload();
                     else
                         Attack();
@@ -1023,29 +1056,34 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         int reduceHp = damage;
         reduceHp -= Mathf.CeilToInt(damage * TotalReduceDamageRate);
+
+        // Armor damage absorbing
         if (Armor > 0)
         {
             if (Armor - damage >= 0)
             {
-                // Armor absorb damage
+                // Reduce damage, decrease armor
                 reduceHp -= Mathf.CeilToInt(damage * TotalArmorReduceDamage);
                 Armor -= damage;
             }
             else
             {
                 // Armor remaining less than 0, Reduce HP by remain damage without armor absorb
-                // Armor absorb damage
                 reduceHp -= Mathf.CeilToInt(Armor * TotalArmorReduceDamage);
                 // Remain damage after armor broke
                 reduceHp -= Mathf.Abs(Armor - damage);
                 Armor = 0;
             }
         }
+
+        // Blocking
+        if (IsBlocking)
+            reduceHp -= Mathf.CeilToInt(damage * TotalBlockReduceDamageRate);
+
         // Avoid increasing hp by damage
         if (reduceHp < 0)
             reduceHp = 0;
 
-        Debug.LogError(reduceHp);
         Hp -= reduceHp;
         if (attacker != null)
         {
@@ -1123,7 +1161,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (attackRoutine != null)
         {
             StopCoroutine(attackRoutine);
-            isPlayingAttackAnim = false;
+            IsPlayingAttackAnim = false;
         }
     }
 
@@ -1132,7 +1170,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (reloadRoutine != null)
         {
             StopCoroutine(reloadRoutine);
-            isReloading = false;
+            IsReloading = false;
         }
     }
 
@@ -1140,6 +1178,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void OnUpdateSelectCharacter(int selectCharacter)
     {
+        refreshingSumAddStats = true;
         if (characterModel != null)
             Destroy(characterModel.gameObject);
         characterData = GameInstance.GetCharacter(selectCharacter);
@@ -1167,6 +1206,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void OnUpdateSelectHead(int selectHead)
     {
+        refreshingSumAddStats = true;
         headData = GameInstance.GetHead(selectHead);
         if (characterModel != null && headData != null)
             characterModel.SetHeadModel(headData.modelObject);
@@ -1175,6 +1215,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void OnUpdateSelectWeapons(int[] selectWeapons)
     {
+        refreshingSumAddStats = true;
         // Changes weapon list, equip first weapon equipped position
         var minEquipPos = int.MaxValue;
         for (var i = 0; i < selectWeapons.Length; ++i)
@@ -1204,6 +1245,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void OnUpdateSelectCustomEquipments(int[] selectCustomEquipments)
     {
+        refreshingSumAddStats = true;
         if (characterModel != null)
             characterModel.ClearCustomModels();
         customEquipmentDict.Clear();
@@ -1226,6 +1268,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void OnUpdateSelectWeaponIndex(int selectWeaponIndex)
     {
+        refreshingSumAddStats = true;
         if (selectWeaponIndex < 0 || selectWeaponIndex >= equippedWeapons.Length)
             return;
         if (characterModel != null && WeaponData != null)
@@ -1233,11 +1276,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
         UpdateCharacterModelHiddingState();
     }
 
+    public void OnUpdateAttributeAmounts()
+    {
+        refreshingSumAddStats = true;
+    }
+
     public void ServerInvincible()
     {
         if (!PhotonNetwork.IsMasterClient)
             return;
-        invincibleTime = Time.unscaledTime;
+        InvincibleTime = Time.unscaledTime;
         IsInvincible = true;
     }
 
@@ -1278,9 +1326,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         SelectWeaponIndex = defaultWeaponIndex;
 
-        isPlayingAttackAnim = false;
-        isReloading = false;
-        isDead = false;
+        IsPlayingAttackAnim = false;
+        IsReloading = false;
+        IsDeadMarked = false;
         Hp = TotalHp;
     }
 
@@ -1396,10 +1444,10 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [PunRPC]
     protected void RpcServerReady()
     {
-        if (!isReady)
+        if (!IsReady)
         {
             ServerSpawn(false);
-            isReady = true;
+            IsReady = true;
         }
     }
 
@@ -1465,7 +1513,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected void RpcDash()
     {
         // Just play dash animation on another clients
-        isDashing = true;
+        IsDashing = true;
         dashingTime = Time.unscaledTime;
     }
 
@@ -1510,7 +1558,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [PunRPC]
     protected void RpcTargetDead()
     {
-        deathTime = Time.unscaledTime;
+        DeathTime = Time.unscaledTime;
     }
 
     [PunRPC]
