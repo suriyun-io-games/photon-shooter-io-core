@@ -77,7 +77,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public GameObject invincibleEffect;
 
     #region Sync Vars
-    private SyncHpRpcComponent syncHp;
+    private SyncHpRpcComponent syncHp = null;
     public int Hp
     {
         get { return syncHp.Value; }
@@ -105,7 +105,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
     }
 
-    private SyncArmorRpcComponent syncArmor;
+    private SyncArmorRpcComponent syncArmor = null;
     public int Armor
     {
         get { return syncArmor.Value; }
@@ -124,7 +124,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
     }
 
-    private SyncExpRpcComponent syncExp;
+    private SyncExpRpcComponent syncExp = null;
     public virtual int Exp
     {
         get { return syncExp.Value; }
@@ -152,37 +152,37 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
     }
 
-    private SyncLevelRpcComponent syncLevel;
+    private SyncLevelRpcComponent syncLevel = null;
     public int Level { get { return syncLevel.Value; } set { syncLevel.Value = value; } }
 
-    private SyncStatPointRpcComponent syncStatPoint;
+    private SyncStatPointRpcComponent syncStatPoint = null;
     public int StatPoint { get { return syncStatPoint.Value; } set { syncStatPoint.Value = value; } }
 
-    private SyncWatchAdsCountRpcComponent syncWatchAdsCount;
+    private SyncWatchAdsCountRpcComponent syncWatchAdsCount = null;
     public byte WatchAdsCount { get { return syncWatchAdsCount.Value; } set { syncWatchAdsCount.Value = value; } }
 
-    private SyncSelectCharacterRpcComponent syncSelectCharacter;
+    private SyncSelectCharacterRpcComponent syncSelectCharacter = null;
     public int SelectCharacter { get { return syncSelectCharacter.Value; } set { syncSelectCharacter.Value = value; } }
 
-    private SyncSelectHeadRpcComponent syncSelectHead;
+    private SyncSelectHeadRpcComponent syncSelectHead = null;
     public int SelectHead { get { return syncSelectHead.Value; } set { syncSelectHead.Value = value; } }
 
-    private SyncSelectWeaponsRpcComponent syncSelectWeapons;
+    private SyncSelectWeaponsRpcComponent syncSelectWeapons = null;
     public int[] SelectWeapons { get { return syncSelectWeapons.Value; } set { syncSelectWeapons.Value = value; } }
 
-    private SyncSelectCustomEquipmentsRpcComponent syncSelectCustomEquipments;
+    private SyncSelectCustomEquipmentsRpcComponent syncSelectCustomEquipments = null;
     public int[] SelectCustomEquipments { get { return syncSelectCustomEquipments.Value; } set { syncSelectCustomEquipments.Value = value; } }
 
-    private SyncSelectWeaponIndexRpcComponent syncSelectWeaponIndex;
+    private SyncSelectWeaponIndexRpcComponent syncSelectWeaponIndex = null;
     public int SelectWeaponIndex { get { return syncSelectWeaponIndex.Value; } set { syncSelectWeaponIndex.Value = value; } }
 
-    private SyncIsInvincibleRpcComponent syncIsInvincible;
+    private SyncIsInvincibleRpcComponent syncIsInvincible = null;
     public bool IsInvincible { get { return syncIsInvincible.Value; } set { syncIsInvincible.Value = value; } }
 
-    private SyncAttributeAmountsRpcComponent syncAttributeAmounts;
+    private SyncAttributeAmountsRpcComponent syncAttributeAmounts = null;
     public AttributeAmounts AttributeAmounts { get { return syncAttributeAmounts.Value; } set { syncAttributeAmounts.Value = value; } }
 
-    private SyncExtraRpcComponent syncExtra;
+    private SyncExtraRpcComponent syncExtra = null;
     public string Extra { get { return syncExtra.Value; } set { syncExtra.Value = value; } }
 
     public virtual int AttackingActionId
