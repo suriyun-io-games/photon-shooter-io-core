@@ -12,18 +12,11 @@ public class BotEntity : CharacterEntity
         Aggressive,
         NoneAttack
     }
-    protected string botPlayerName;
+    private SyncBotNameRpcComponent syncBotName = null;
     public override string PlayerName
     {
-        get { return botPlayerName; }
-        set
-        {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                botPlayerName = value;
-                photonView.AllRPC(RpcUpdateBotName, value);
-            }
-        }
+        get { return syncBotName.Value; }
+        set { syncBotName.Value = value; }
     }
 
     public override bool IsBot
@@ -351,11 +344,5 @@ public class BotEntity : CharacterEntity
         if (range < minimumAttackRange)
             return minimumAttackRange;
         return range;
-    }
-
-    [PunRPC]
-    protected void RpcUpdateBotName(string name)
-    {
-        botPlayerName = name;
     }
 }
