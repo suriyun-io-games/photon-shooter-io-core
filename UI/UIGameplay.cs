@@ -238,12 +238,12 @@ public class UIGameplay : MonoBehaviour
         }
     }
 
-    public void AddAttribute(string name)
+    public void AddAttribute(int id)
     {
         var character = BaseNetworkGameCharacter.Local as CharacterEntity;
         if (character == null || character.statPoint == 0)
             return;
-        character.CmdAddAttribute(name);
+        character.CmdAddAttribute(id);
         StartCoroutine(SetupCanRandomAttributes());
     }
 

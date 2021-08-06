@@ -8,6 +8,8 @@ using Photon.Realtime;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CharacterMovement))]
+[RequireComponent(typeof(CharacterAction))]
+[DisallowMultipleComponent]
 public class CharacterEntity : BaseNetworkGameCharacter
 {
     public const float DISCONNECT_WHEN_NOT_RESPAWN_DURATION = 60;
@@ -63,22 +65,20 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     #region Sync Vars
     [Header("Online data")]
-    protected int _hp;
-    protected int _armor;
-    protected int _exp;
-    protected int _level;
-    protected int _statPoint;
-    protected int _watchAdsCount;
-    protected int _selectCharacter;
-    protected int _selectHead;
-    protected int[] _selectWeapons;
-    protected int[] _selectCustomEquipments;
-    protected int _selectWeaponIndex;
-    protected bool _isInvincible;
-    protected int _attackingActionId = -1;
-    protected CharacterStats _addStats;
-    protected string _extra;
-    protected Vector3 _aimPosition;
+    protected int _hp = 0;
+    protected int _armor = 0;
+    protected int _exp = 0;
+    protected int _level = 1;
+    protected int _statPoint = 0;
+    protected int _watchAdsCount = 0;
+    protected int _selectCharacter = 0;
+    protected int _selectHead = 0;
+    protected int[] _selectWeapons = new int[0];
+    protected int[] _selectCustomEquipments = new int[0];
+    protected int _selectWeaponIndex = 0;
+    protected bool _isInvincible = false;
+    protected AttributeAmounts _attributeAmounts = new AttributeAmounts(0);
+    protected string _extra = string.Empty;
 
     public virtual int hp
     {
@@ -140,7 +140,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 value = 0;
 
             if (value > TotalArmor)
-                value = TotalArmor;
+                armor = TotalArmor;
         }
     }
     public virtual int exp
@@ -288,27 +288,15 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
-    public virtual int attackingActionId
+    public virtual AttributeAmounts attributeAmounts
     {
-        get { return _attackingActionId; }
-        set
-        {
-            if (photonView.IsMine && value != attackingActionId)
-            {
-                _attackingActionId = value;
-                photonView.OthersRPC(RpcUpdateAttackingActionId, value);
-            }
-        }
-    }
-    public virtual CharacterStats addStats
-    {
-        get { return _addStats; }
+        get { return _attributeAmounts; }
         set
         {
             if (PhotonNetwork.IsMasterClient)
             {
-                _addStats = value;
-                photonView.OthersRPC(RpcUpdateAddStats, value);
+                _attributeAmounts = value;
+                photonView.OthersRPC(RpcUpdateAttributeAmounts, value);
             }
         }
     }
@@ -324,17 +312,15 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
+    public virtual int attackingActionId
+    {
+        get { return CacheCharacterAction.attackingActionId; }
+        set { CacheCharacterAction.attackingActionId = value; }
+    }
     public virtual Vector3 aimPosition
     {
-        get { return _aimPosition; }
-        set
-        {
-            if (photonView.IsMine && value != aimPosition)
-            {
-                _aimPosition = value;
-                photonView.OthersRPC(RpcUpdateAimPosition, value);
-            }
-        }
+        get { return CacheCharacterAction.aimPosition; }
+        set { CacheCharacterAction.aimPosition = value; }
     }
     #endregion
 
@@ -438,13 +424,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public Transform CacheTransform { get; private set; }
     public Rigidbody CacheRigidbody { get; private set; }
     public CharacterMovement CacheCharacterMovement { get; private set; }
+    public CharacterAction CacheCharacterAction { get; private set; }
 
-    public CharacterStats SumAddStats
+    public virtual CharacterStats SumAddStats
     {
         get
         {
             var stats = new CharacterStats();
-            stats += addStats;
             if (headData != null)
                 stats += headData.stats;
             if (characterData != null)
@@ -454,7 +440,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (customEquipmentDict != null)
             {
                 foreach (var value in customEquipmentDict.Values)
+                {
                     stats += value.stats;
+                }
+            }
+            if (attributeAmounts.Dict != null)
+            {
+                foreach (var kv in attributeAmounts.Dict)
+                {
+                    CharacterAttributes attribute;
+                    if (GameplayManager.Singleton.Attributes.TryGetValue(kv.Key, out attribute))
+                        stats += attribute.stats * kv.Value;
+                }
             }
             return stats;
         }
@@ -591,8 +588,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         selectCustomEquipments = new int[0];
         selectWeaponIndex = -1;
         isInvincible = false;
-        addStats = new CharacterStats();
-        extra = "";
+        attributeAmounts = new AttributeAmounts(0);
+        extra = string.Empty;
     }
 
     protected override void Awake()
@@ -603,6 +600,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         CacheRigidbody = gameObject.GetOrAddComponent<Rigidbody>();
         CacheRigidbody.useGravity = false;
         CacheCharacterMovement = gameObject.GetOrAddComponent<CharacterMovement>();
+        CacheCharacterAction = gameObject.GetOrAddComponent<CharacterAction>();
+        if (!photonView.ObservedComponents.Contains(CacheCharacterAction))
+            photonView.ObservedComponents.Add(CacheCharacterAction);
         if (damageLaunchTransform == null)
             damageLaunchTransform = CacheTransform;
         if (effectTransform == null)
@@ -633,10 +633,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.OthersRPC(RpcUpdateSelectCustomEquipments, selectCustomEquipments);
         photonView.OthersRPC(RpcUpdateSelectWeaponIndex, selectWeaponIndex);
         photonView.OthersRPC(RpcUpdateIsInvincible, isInvincible);
-        photonView.OthersRPC(RpcUpdateAttackingActionId, attackingActionId);
-        photonView.OthersRPC(RpcUpdateAddStats, addStats);
+        photonView.OthersRPC(RpcUpdateAttributeAmounts, attributeAmounts);
         photonView.OthersRPC(RpcUpdateExtra, extra);
-        photonView.OthersRPC(RpcUpdateAimPosition, aimPosition);
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
@@ -656,10 +654,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         photonView.TargetRPC(RpcUpdateSelectCustomEquipments, newPlayer, selectCustomEquipments);
         photonView.TargetRPC(RpcUpdateSelectWeaponIndex, newPlayer, selectWeaponIndex);
         photonView.TargetRPC(RpcUpdateIsInvincible, newPlayer, isInvincible);
-        photonView.TargetRPC(RpcUpdateAttackingActionId, newPlayer, attackingActionId);
-        photonView.TargetRPC(RpcUpdateAddStats, newPlayer, addStats);
+        photonView.TargetRPC(RpcUpdateAttributeAmounts, newPlayer, attributeAmounts);
         photonView.TargetRPC(RpcUpdateExtra, newPlayer, extra);
-        photonView.TargetRPC(RpcUpdateAimPosition, newPlayer, aimPosition);
     }
 
     protected override void OnStartLocalPlayer()
@@ -1502,20 +1498,20 @@ public class CharacterEntity : BaseNetworkGameCharacter
         ServerReload();
     }
     
-    public void CmdAddAttribute(string name)
+    public void CmdAddAttribute(int id)
     {
-        photonView.MasterRPC(RpcServerAddAttribute, name);
+        photonView.MasterRPC(RpcServerAddAttribute, id);
     }
 
     [PunRPC]
-    protected void RpcServerAddAttribute(string name)
+    protected void RpcServerAddAttribute(int id)
     {
         if (statPoint > 0)
         {
             CharacterAttributes attribute;
-            if (GameplayManager.Singleton.attributes.TryGetValue(name, out attribute))
+            if (GameplayManager.Singleton.Attributes.TryGetValue(id, out attribute))
             {
-                addStats += attribute.stats;
+                attributeAmounts = attributeAmounts.Increase(id, 1);
                 --statPoint;
             }
         }
@@ -1740,24 +1736,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
         _isInvincible = isInvincible;
     }
     [PunRPC]
-    protected virtual void RpcUpdateAttackingActionId(int attackingActionId)
+    protected virtual void RpcUpdateAttributeAmounts(AttributeAmounts attributeAmounts)
     {
-        _attackingActionId = attackingActionId;
-    }
-    [PunRPC]
-    protected virtual void RpcUpdateAddStats(CharacterStats addStats)
-    {
-        _addStats = addStats;
+        _attributeAmounts = attributeAmounts;
     }
     [PunRPC]
     protected virtual void RpcUpdateExtra(string extra)
     {
         _extra = extra;
-    }
-    [PunRPC]
-    protected virtual void RpcUpdateAimPosition(Vector3 aimPosition)
-    {
-        _aimPosition = aimPosition;
     }
     [PunRPC]
     protected virtual void RpcUpdateEquippedWeapons(int index, int defaultId, int weaponId, int currentAmmo, int currentReserveAmmo)

@@ -48,9 +48,9 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     public SpawnArea[] pickupSpawnAreas;
     public PowerUpSpawnData[] powerUps;
     public PickupSpawnData[] pickups;
-    public readonly Dictionary<string, PowerUpEntity> powerUpEntities = new Dictionary<string, PowerUpEntity>();
-    public readonly Dictionary<string, PickupEntity> pickupEntities = new Dictionary<string, PickupEntity>();
-    public readonly Dictionary<string, CharacterAttributes> attributes = new Dictionary<string, CharacterAttributes>();
+    public readonly Dictionary<string, PowerUpEntity> PowerUpEntities = new Dictionary<string, PowerUpEntity>();
+    public readonly Dictionary<string, PickupEntity> PickupEntities = new Dictionary<string, PickupEntity>();
+    public readonly Dictionary<int, CharacterAttributes> Attributes = new Dictionary<int, CharacterAttributes>();
 
     protected virtual void Awake()
     {
@@ -61,24 +61,24 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         }
         Singleton = this;
 
-        powerUpEntities.Clear();
+        PowerUpEntities.Clear();
         foreach (var powerUp in powerUps)
         {
             var powerUpPrefab = powerUp.powerUpPrefab;
-            if (powerUpPrefab != null && !powerUpEntities.ContainsKey(powerUpPrefab.name))
-                powerUpEntities.Add(powerUpPrefab.name, powerUpPrefab);
+            if (powerUpPrefab != null && !PowerUpEntities.ContainsKey(powerUpPrefab.name))
+                PowerUpEntities.Add(powerUpPrefab.name, powerUpPrefab);
         }
-        pickupEntities.Clear();
+        PickupEntities.Clear();
         foreach (var pickup in pickups)
         {
             var pickupPrefab = pickup.pickupPrefab;
-            if (pickupPrefab != null && !pickupEntities.ContainsKey(pickupPrefab.name))
-                pickupEntities.Add(pickupPrefab.name, pickupPrefab);
+            if (pickupPrefab != null && !PickupEntities.ContainsKey(pickupPrefab.name))
+                PickupEntities.Add(pickupPrefab.name, pickupPrefab);
         }
-        attributes.Clear();
+        Attributes.Clear();
         foreach (var availableAttribute in availableAttributes)
         {
-            attributes[availableAttribute.name] = availableAttribute;
+            Attributes[availableAttribute.GetHashId()] = availableAttribute;
         }
         // Set unique view id
         PhotonView view = GetComponent<PhotonView>();
@@ -121,7 +121,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.IsMasterClient || string.IsNullOrEmpty(prefabName))
             return;
         PowerUpEntity powerUpPrefab = null;
-        if (powerUpEntities.TryGetValue(prefabName, out powerUpPrefab))
+        if (PowerUpEntities.TryGetValue(prefabName, out powerUpPrefab))
         {
             var powerUpEntityGo = PhotonNetwork.InstantiateRoomObject(powerUpPrefab.name, GetPowerUpSpawnPosition(), Quaternion.identity, 0, new object[0]);
             var powerUpEntity = powerUpEntityGo.GetComponent<PowerUpEntity>();
@@ -139,7 +139,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.IsMasterClient || string.IsNullOrEmpty(prefabName))
             return;
         PickupEntity pickupPrefab = null;
-        if (pickupEntities.TryGetValue(prefabName, out pickupPrefab))
+        if (PickupEntities.TryGetValue(prefabName, out pickupPrefab))
         {
             var pickUpEntityGo = PhotonNetwork.InstantiateRoomObject(pickupPrefab.name, GetPickupSpawnPosition(), Quaternion.identity, 0, new object[0]);
             var pickupEntity = pickUpEntityGo.GetComponent<PickupEntity>();

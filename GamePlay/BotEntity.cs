@@ -33,6 +33,16 @@ public class BotEntity : CharacterEntity
         get { return true; }
     }
 
+    public override CharacterStats SumAddStats
+    {
+        get
+        {
+            CharacterStats addStats = base.SumAddStats;
+            addStats += startAddStats;
+            return addStats;
+        }
+    }
+
     public const float ReachedTargetDistance = 0.1f;
     [Header("Bot configs")]
     public float minimumAttackRange = 5f;
@@ -294,12 +304,12 @@ public class BotEntity : CharacterEntity
         if (statPoint <= 0)
             return;
         var dict = new Dictionary<CharacterAttributes, int>();
-        var list = GameplayManager.Singleton.attributes.Values.ToList();
+        var list = GameplayManager.Singleton.Attributes.Values.ToList();
         foreach (var entry in list)
         {
             dict.Add(entry, entry.randomWeight);
         }
-        CmdAddAttribute(WeightedRandomizer.From(dict).TakeOne().name);
+        CmdAddAttribute(WeightedRandomizer.From(dict).TakeOne().GetHashId());
     }
 
     private bool IsReachedTargetPosition()
@@ -347,7 +357,6 @@ public class BotEntity : CharacterEntity
     public override void OnSpawn()
     {
         base.OnSpawn();
-        addStats += startAddStats;
         Hp = TotalHp;
     }
 

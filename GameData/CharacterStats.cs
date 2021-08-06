@@ -49,10 +49,30 @@ public struct CharacterStats
         return result;
     }
 
+    public static CharacterStats operator *(CharacterStats a, short b)
+    {
+        var result = new CharacterStats();
+        result.addMaxHp = a.addMaxHp * b;
+        result.addMaxArmor = a.addMaxArmor * b;
+        result.addMoveSpeed = a.addMoveSpeed * b;
+        result.addWeaponDamageRate = a.addWeaponDamageRate * b;
+        result.addReduceDamageRate = a.addReduceDamageRate * b;
+        result.addArmorReduceDamage = a.addArmorReduceDamage * b;
+        result.addExpRate = a.addExpRate * b;
+        result.addScoreRate = a.addScoreRate * b;
+        result.addHpRecoveryRate = a.addHpRecoveryRate * b;
+        result.addArmorRecoveryRate = a.addArmorRecoveryRate * b;
+        result.addDamageRateLeechHp = a.addDamageRateLeechHp * b;
+        return result;
+    }
+
+    private const int IntSize = sizeof(int);
+    private const int FloatSize = sizeof(float);
+    private const int writeBytesSize = (IntSize * 3) + (FloatSize * 8);
+    private static readonly byte[] writeBytes = new byte[writeBytesSize];
     public static byte[] SerializeMethod(object customobject)
     {
         CharacterStats data = (CharacterStats)customobject;
-        byte[] writeBytes = new byte[11 * 5];
         int index = 0;
         Protocol.Serialize(data.addMaxHp, writeBytes, ref index);
         Protocol.Serialize(data.addMaxArmor, writeBytes, ref index);
@@ -72,8 +92,8 @@ public struct CharacterStats
     {
         CharacterStats data = new CharacterStats();
         int index = 0;
-        int tempInt = 0;
-        float tempFloat = 0f;
+        int tempInt;
+        float tempFloat;
         Protocol.Deserialize(out tempInt, readBytes, ref index);
         data.addMaxHp = tempInt;
         Protocol.Deserialize(out tempInt, readBytes, ref index);
