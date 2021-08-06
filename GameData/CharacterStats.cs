@@ -72,7 +72,7 @@ public struct CharacterStats
 
     private const int IntSize = sizeof(int);
     private const int FloatSize = sizeof(float);
-    private const int writeBytesSize = (IntSize * 3) + (FloatSize * 8);
+    private const int writeBytesSize = (IntSize * 3) + (FloatSize * 9);
     private static readonly byte[] writeBytes = new byte[writeBytesSize];
     public static byte[] SerializeMethod(object customobject)
     {
@@ -83,6 +83,7 @@ public struct CharacterStats
         Protocol.Serialize(data.addMoveSpeed, writeBytes, ref index);
         Protocol.Serialize(data.addWeaponDamageRate, writeBytes, ref index);
         Protocol.Serialize(data.addReduceDamageRate, writeBytes, ref index);
+        Protocol.Serialize(data.addBlockReduceDamageRate, writeBytes, ref index);
         Protocol.Serialize(data.addArmorReduceDamage, writeBytes, ref index);
         Protocol.Serialize(data.addExpRate, writeBytes, ref index);
         Protocol.Serialize(data.addScoreRate, writeBytes, ref index);
@@ -108,6 +109,8 @@ public struct CharacterStats
         data.addWeaponDamageRate = tempFloat;
         Protocol.Deserialize(out tempFloat, readBytes, ref index);
         data.addReduceDamageRate = tempFloat;
+        Protocol.Deserialize(out tempFloat, readBytes, ref index);
+        data.addBlockReduceDamageRate = tempFloat;
         Protocol.Deserialize(out tempFloat, readBytes, ref index);
         data.addArmorReduceDamage = tempFloat;
         Protocol.Deserialize(out tempFloat, readBytes, ref index);
