@@ -5,6 +5,7 @@ using UnityEngine.Serialization;
 using Photon.Pun;
 using System.Linq;
 
+[RequireComponent(typeof(SyncBotNameRpcComponent))]
 public class BotEntity : CharacterEntity
 {
     public enum Characteristic
