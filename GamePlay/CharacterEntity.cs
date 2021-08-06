@@ -813,8 +813,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 
             if (!IsBlocking && !IsDashing)
             {
-                UpdateInputDirection_TopDown(!IsBlocking && canAttack);
-                UpdateInputDirection_ThirdPerson(!IsBlocking && canAttack);
+                UpdateInputDirection_TopDown(canAttack);
+                UpdateInputDirection_ThirdPerson(canAttack);
                 if (!IsDead)
                 {
                     if (InputManager.GetButtonDown("Reload"))
@@ -1483,8 +1483,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (StatPoint > 0)
         {
-            CharacterAttributes attribute;
-            if (GameplayManager.Singleton.Attributes.TryGetValue(id, out attribute))
+            if (GameplayManager.Singleton.Attributes.ContainsKey(id))
             {
                 AttributeAmounts = AttributeAmounts.Increase(id, 1);
                 --StatPoint;
