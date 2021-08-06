@@ -1,10 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 using Photon.Pun;
-using Photon.Realtime;
 using System.Linq;
 
 public class BotEntity : CharacterEntity
@@ -170,7 +168,7 @@ public class BotEntity : CharacterEntity
             lookingPosition = enemy.CacheTransform.position;
         }
 
-        attackingActionId = -1;
+        AttackingActionId = -1;
         if (enemy != null)
         {
             switch (characteristic)
@@ -180,25 +178,28 @@ public class BotEntity : CharacterEntity
                     Vector3.Distance(enemy.CacheTransform.position, CacheTransform.position) < GetAttackRange())
                     {
                         // Attack when nearby enemy
-                        attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
-                        lastAttackTime = Time.unscaledTime;
-                        if (CurrentEquippedWeapon.currentReserveAmmo > 0)
+                        if (WeaponData != null)
                         {
-                            if (CurrentEquippedWeapon.currentAmmo == 0)
-                                ServerReload();
-                            else if (attackingActionId < 0)
-                                attackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
-                        }
-                        else
-                        {
-                            if (WeaponData != null)
+                            AttackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
+                            lastAttackTime = Time.unscaledTime;
+                            if (CurrentEquippedWeapon.currentReserveAmmo > 0)
+                            {
+                                if (CurrentEquippedWeapon.currentAmmo == 0)
+                                    ServerReload();
+                                else if (AttackingActionId < 0)
+                                    AttackingActionId = WeaponData.GetRandomAttackAnimation().actionId;
+                            }
+                            else
                             {
                                 var nextPosition = WeaponData.equipPosition + 1;
                                 if (nextPosition < equippedWeapons.Length && !equippedWeapons[nextPosition].IsEmpty())
                                     ServerChangeWeapon(nextPosition);
                             }
-                            else
-                                ServerChangeWeapon(SyncSelectWeaponIndex + 1);
+                        }
+                        else
+                        {
+                            // Try find next weapon
+                            ServerChangeWeapon(SelectWeaponIndex + 1);
                         }
                     }
                     break;
@@ -285,7 +286,7 @@ public class BotEntity : CharacterEntity
 
     private void UpdateStatPoint()
     {
-        if (SyncStatPoint <= 0)
+        if (StatPoint <= 0)
             return;
         var dict = new Dictionary<CharacterAttributes, int>();
         var list = GameplayManager.Singleton.Attributes.Values.ToList();

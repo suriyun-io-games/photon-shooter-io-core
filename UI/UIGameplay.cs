@@ -60,7 +60,7 @@ public class UIGameplay : MonoBehaviour
         if (localCharacter == null)
             return;
 
-        var level = localCharacter.SyncLevel;
+        var level = localCharacter.Level;
         var exp = localCharacter.Exp;
         var nextExp = GameplayManager.Singleton.GetExp(level);
         if (textLevel != null)
@@ -73,7 +73,7 @@ public class UIGameplay : MonoBehaviour
             fillExp.fillAmount = (float)exp / (float)nextExp;
 
         if (textStatPoint != null)
-            textStatPoint.text = localCharacter.SyncStatPoint.ToString("N0");
+            textStatPoint.text = localCharacter.StatPoint.ToString("N0");
 
         if (textHp != null)
             textHp.text = localCharacter.TotalHp.ToString("N0");
@@ -98,7 +98,7 @@ public class UIGameplay : MonoBehaviour
                 if (textRespawnCountDown != null)
                     textRespawnCountDown.text = Mathf.Abs(remainTime).ToString("N0");
                 if (textWatchedAdsCount != null)
-                    textWatchedAdsCount.text = (watchAdsRespawnAvailable - localCharacter.SyncWatchAdsCount) + "/" + watchAdsRespawnAvailable;
+                    textWatchedAdsCount.text = (watchAdsRespawnAvailable - localCharacter.WatchAdsCount) + "/" + watchAdsRespawnAvailable;
                 if (respawnButtonContainer != null)
                     respawnButtonContainer.SetActive(remainTime == 0);
             }
@@ -110,7 +110,7 @@ public class UIGameplay : MonoBehaviour
             isRespawnShown = false;
         }
 
-        if (localCharacter.Hp > 0 && localCharacter.SyncStatPoint > 0 && canRandomAttributes)
+        if (localCharacter.Hp > 0 && localCharacter.StatPoint > 0 && canRandomAttributes)
         {
             if (!isRandomedAttributesShown)
             {
@@ -241,7 +241,7 @@ public class UIGameplay : MonoBehaviour
     public void AddAttribute(int id)
     {
         var character = BaseNetworkGameCharacter.Local as CharacterEntity;
-        if (character == null || character.SyncStatPoint == 0)
+        if (character == null || character.StatPoint == 0)
             return;
         character.CmdAddAttribute(id);
         StartCoroutine(SetupCanRandomAttributes());
@@ -261,7 +261,7 @@ public class UIGameplay : MonoBehaviour
         if (character == null)
             return;
 
-        if (character.SyncWatchAdsCount >= GameplayManager.Singleton.watchAdsRespawnAvailable)
+        if (character.WatchAdsCount >= GameplayManager.Singleton.watchAdsRespawnAvailable)
         {
             character.CmdRespawn(false);
             return;

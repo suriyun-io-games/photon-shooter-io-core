@@ -43,25 +43,25 @@ public class IONetworkGameRule : BaseNetworkGameRule
         var botGo = PhotonNetwork.InstantiateRoomObject(botPrefab.name, Vector3.zero, Quaternion.identity, 0, new object[0]);
         var botEntity = botGo.GetComponent<BotEntity>();
         botEntity.PlayerName = bot.name;
-        botEntity.SyncSelectHead = bot.GetSelectHead();
-        botEntity.SyncSelectCharacter = bot.GetSelectCharacter();
+        botEntity.SelectHead = bot.GetSelectHead();
+        botEntity.SelectCharacter = bot.GetSelectCharacter();
         if (startWeapons != null && startWeapons.Length > 0)
-            botEntity.SyncSelectWeapons = GetStartWeapons();
+            botEntity.SelectWeapons = GetStartWeapons();
         else
-            botEntity.SyncSelectWeapons = bot.GetSelectWeapons();
+            botEntity.SelectWeapons = bot.GetSelectWeapons();
         return botEntity;
     }
 
     public virtual void NewPlayer(CharacterEntity character, int selectHead, int selectCharacter, int[] selectWeapons, int[] selectCustomEquipments, string extra)
     {
-        character.SyncSelectHead = selectHead;
-        character.SyncSelectCharacter = selectCharacter;
+        character.SelectHead = selectHead;
+        character.SelectCharacter = selectCharacter;
         if (startWeapons != null && startWeapons.Length > 0)
-            character.SyncSelectWeapons = GetStartWeapons();
+            character.SelectWeapons = GetStartWeapons();
         else
-            character.SyncSelectWeapons = selectWeapons;
-        character.SyncSelectCustomEquipments = selectCustomEquipments;
-        character.SyncExtra = extra;
+            character.SelectWeapons = selectWeapons;
+        character.SelectCustomEquipments = selectCustomEquipments;
+        character.Extra = extra;
     }
 
     public override bool CanCharacterRespawn(BaseNetworkGameCharacter character, params object[] extraParams)
@@ -80,20 +80,20 @@ public class IONetworkGameRule : BaseNetworkGameRule
         var targetCharacter = character as CharacterEntity;
         var gameplayManager = GameplayManager.Singleton;
         // For IO Modes, character stats will be reset when dead
-        if (!isWatchedAds || targetCharacter.SyncWatchAdsCount >= gameplayManager.watchAdsRespawnAvailable)
+        if (!isWatchedAds || targetCharacter.WatchAdsCount >= gameplayManager.watchAdsRespawnAvailable)
         {
             targetCharacter.ResetScore();
             targetCharacter.ResetKillCount();
             targetCharacter.ResetAssistCount();
             targetCharacter.Exp = 0;
-            targetCharacter.SyncLevel = 1;
-            targetCharacter.SyncStatPoint = 0;
-            targetCharacter.SyncWatchAdsCount = 0;
-            targetCharacter.SyncAttributeAmounts = new AttributeAmounts(0);
+            targetCharacter.Level = 1;
+            targetCharacter.StatPoint = 0;
+            targetCharacter.WatchAdsCount = 0;
+            targetCharacter.AttributeAmounts = new AttributeAmounts(0);
             targetCharacter.Armor = 0;
         }
         else
-            ++targetCharacter.SyncWatchAdsCount;
+            ++targetCharacter.WatchAdsCount;
 
         return true;
     }

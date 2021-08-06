@@ -136,7 +136,7 @@ public class DamageEntity : MonoBehaviour
         var hitSomeAliveCharacter = false;
         if (otherCharacter != null &&
             otherCharacter.Hp > 0 &&
-            !otherCharacter.SyncIsInvincible &&
+            !otherCharacter.IsInvincible &&
             GameplayManager.Singleton.CanReceiveDamage(otherCharacter, attacker))
         {
             if (!otherCharacter.IsHidding)
@@ -178,7 +178,7 @@ public class DamageEntity : MonoBehaviour
                 hitCharacter == otherCharacter ||
                 hitCharacter.photonView.ViewID == attackerViewId ||
                 hitCharacter.Hp <= 0 ||
-                hitCharacter.SyncIsInvincible ||
+                hitCharacter.IsInvincible ||
                 !GameplayManager.Singleton.CanReceiveDamage(hitCharacter, attacker))
                 continue;
             if (!hitCharacter.IsHidding)
