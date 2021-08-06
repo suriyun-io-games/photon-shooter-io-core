@@ -151,12 +151,12 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     {
         // TODO: Improve team codes
 
-        if (character.playerTeam == 1 &&
+        if (character.PlayerTeam == 1 &&
             characterSpawnAreasForTeamA != null &&
             characterSpawnAreasForTeamA.Length > 0)
             return characterSpawnAreasForTeamA[Random.Range(0, characterSpawnAreasForTeamA.Length)].GetSpawnPosition();
 
-        if (character.playerTeam == 2 &&
+        if (character.PlayerTeam == 2 &&
             characterSpawnAreasForTeamB != null &&
             characterSpawnAreasForTeamB.Length > 0)
             return characterSpawnAreasForTeamB[Random.Range(0, characterSpawnAreasForTeamB.Length)].GetSpawnPosition();
@@ -212,7 +212,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (networkGameplayManager != null)
         {
             if (networkGameplayManager.gameRule != null && networkGameplayManager.gameRule.IsTeamGameplay && attacker)
-                return damageReceiver.playerTeam != attacker.playerTeam;
+                return damageReceiver.PlayerTeam != attacker.PlayerTeam;
             if (networkGameplayManager.IsMatchEnded)
                 return false;
         }

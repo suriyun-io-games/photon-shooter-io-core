@@ -64,28 +64,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public GameObject invincibleEffect;
 
     #region Sync Vars
-    [Header("Online data")]
     protected int _hp = 0;
-    protected int _armor = 0;
-    protected int _exp = 0;
-    protected int _level = 1;
-    protected int _statPoint = 0;
-    protected int _watchAdsCount = 0;
-    protected int _selectCharacter = 0;
-    protected int _selectHead = 0;
-    protected int[] _selectWeapons = new int[0];
-    protected int[] _selectCustomEquipments = new int[0];
-    protected int _selectWeaponIndex = 0;
-    protected bool _isInvincible = false;
-    protected AttributeAmounts _attributeAmounts = new AttributeAmounts(0);
-    protected string _extra = string.Empty;
-
-    public virtual int hp
+    public virtual int SyncHp
     {
         get { return _hp; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != hp)
+            if (PhotonNetwork.IsMasterClient && value != SyncHp)
             {
                 _hp = value;
                 photonView.OthersRPC(RpcUpdateHp, value);
@@ -94,7 +79,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     }
     public int Hp
     {
-        get { return hp; }
+        get { return SyncHp; }
         set
         {
             if (!PhotonNetwork.IsMasterClient)
@@ -107,21 +92,23 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 {
                     photonView.TargetRPC(RpcTargetDead, photonView.Owner);
                     deathTime = Time.unscaledTime;
-                    ++dieCount;
+                    ++syncDieCount.Value;
                     isDead = true;
                 }
             }
             if (value > TotalHp)
                 value = TotalHp;
-            hp = value;
+            SyncHp = value;
         }
     }
-    public virtual int armor
+
+    protected int _armor = 0;
+    public virtual int SyncArmor
     {
         get { return _armor; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != armor)
+            if (PhotonNetwork.IsMasterClient && value != SyncArmor)
             {
                 _armor = value;
                 photonView.OthersRPC(RpcUpdateArmor, value);
@@ -130,7 +117,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     }
     public int Armor
     {
-        get { return armor; }
+        get { return SyncArmor; }
         set
         {
             if (!PhotonNetwork.IsMasterClient)
@@ -140,15 +127,17 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 value = 0;
 
             if (value > TotalArmor)
-                armor = TotalArmor;
+                SyncArmor = TotalArmor;
         }
     }
-    public virtual int exp
+
+    protected int _exp = 0;
+    public virtual int SyncExp
     {
         get { return _exp; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != exp)
+            if (PhotonNetwork.IsMasterClient && value != SyncExp)
             {
                 _exp = value;
                 photonView.OthersRPC(RpcUpdateExp, value);
@@ -157,7 +146,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     }
     public virtual int Exp
     {
-        get { return exp; }
+        get { return SyncExp; }
         set
         {
             if (!PhotonNetwork.IsMasterClient)
@@ -166,129 +155,149 @@ public class CharacterEntity : BaseNetworkGameCharacter
             var gameplayManager = GameplayManager.Singleton;
             while (true)
             {
-                if (level == gameplayManager.maxLevel)
+                if (SyncLevel == gameplayManager.maxLevel)
                     break;
 
-                var currentExp = gameplayManager.GetExp(level);
+                var currentExp = gameplayManager.GetExp(SyncLevel);
                 if (value < currentExp)
                     break;
                 var remainExp = value - currentExp;
                 value = remainExp;
-                ++level;
-                statPoint += gameplayManager.addingStatPoint;
+                ++SyncLevel;
+                SyncStatPoint += gameplayManager.addingStatPoint;
             }
-            exp = value;
+            SyncExp = value;
         }
     }
-    public virtual int level
+
+    protected int _level = 1;
+    public virtual int SyncLevel
     {
         get { return _level; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != level)
+            if (PhotonNetwork.IsMasterClient && value != SyncLevel)
             {
                 _level = value;
                 photonView.OthersRPC(RpcUpdateLevel, value);
             }
         }
     }
-    public virtual int statPoint
+
+    protected int _statPoint = 0;
+    public virtual int SyncStatPoint
     {
         get { return _statPoint; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != statPoint)
+            if (PhotonNetwork.IsMasterClient && value != SyncStatPoint)
             {
                 _statPoint = value;
                 photonView.OthersRPC(RpcUpdateStatPoint, value);
             }
         }
     }
-    public virtual int watchAdsCount
+
+    protected int _watchAdsCount = 0;
+    public virtual int SyncWatchAdsCount
     {
         get { return _watchAdsCount; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != watchAdsCount)
+            if (PhotonNetwork.IsMasterClient && value != SyncWatchAdsCount)
             {
                 _watchAdsCount = value;
                 photonView.OthersRPC(RpcUpdateWatchAdsCount, value);
             }
         }
     }
-    public virtual int selectCharacter
+
+    protected int _selectCharacter = 0;
+    public virtual int SyncSelectCharacter
     {
         get { return _selectCharacter; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != selectCharacter)
+            if (PhotonNetwork.IsMasterClient && value != SyncSelectCharacter)
             {
                 _selectCharacter = value;
                 photonView.AllRPC(RpcUpdateSelectCharacter, value);
             }
         }
     }
-    public virtual int selectHead
+
+    protected int _selectHead = 0;
+    public virtual int SyncSelectHead
     {
         get { return _selectHead; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != selectHead)
+            if (PhotonNetwork.IsMasterClient && value != SyncSelectHead)
             {
                 _selectHead = value;
                 photonView.AllRPC(RpcUpdateSelectHead, value);
             }
         }
     }
-    public virtual int[] selectWeapons
+
+    protected int[] _selectWeapons = new int[0];
+    public virtual int[] SyncSelectWeapons
     {
         get { return _selectWeapons; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != selectWeapons)
+            if (PhotonNetwork.IsMasterClient && value != SyncSelectWeapons)
             {
                 _selectWeapons = value;
                 photonView.AllRPC(RpcUpdateSelectWeapons, value);
             }
         }
     }
-    public virtual int[] selectCustomEquipments
+
+    protected int[] _selectCustomEquipments = new int[0];
+    public virtual int[] SyncSelectCustomEquipments
     {
         get { return _selectCustomEquipments; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != selectCustomEquipments)
+            if (PhotonNetwork.IsMasterClient && value != SyncSelectCustomEquipments)
             {
                 _selectCustomEquipments = value;
                 photonView.AllRPC(RpcUpdateSelectCustomEquipments, value);
             }
         }
     }
-    public virtual int selectWeaponIndex
+
+    protected int _selectWeaponIndex = 0;
+    public virtual int SyncSelectWeaponIndex
     {
         get { return _selectWeaponIndex; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != selectWeaponIndex)
+            if (PhotonNetwork.IsMasterClient && value != SyncSelectWeaponIndex)
             {
                 _selectWeaponIndex = value;
                 photonView.AllRPC(RpcUpdateSelectWeaponIndex, value);
             }
         }
     }
-    public virtual bool isInvincible
+
+    protected bool _isInvincible = false;
+    public virtual bool SyncIsInvincible
     {
         get { return _isInvincible; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != isInvincible)
+            if (PhotonNetwork.IsMasterClient && value != SyncIsInvincible)
             {
                 _isInvincible = value;
                 photonView.OthersRPC(RpcUpdateIsInvincible, value);
             }
         }
     }
-    public virtual AttributeAmounts attributeAmounts
+
+    protected AttributeAmounts _attributeAmounts = new AttributeAmounts(0);
+    public virtual AttributeAmounts SyncAttributeAmounts
     {
         get { return _attributeAmounts; }
         set
@@ -300,12 +309,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
             }
         }
     }
-    public virtual string extra
+
+    protected string _extra = string.Empty;
+    public virtual string SyncExtra
     {
         get { return _extra; }
         set
         {
-            if (PhotonNetwork.IsMasterClient && value != extra)
+            if (PhotonNetwork.IsMasterClient && value != SyncExtra)
             {
                 _extra = value;
                 photonView.OthersRPC(RpcUpdateExtra, value);
@@ -326,7 +337,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public override bool IsDead
     {
-        get { return hp <= 0; }
+        get { return SyncHp <= 0; }
     }
 
     public override bool IsBot
@@ -385,7 +396,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         get
         {
             try
-            { return equippedWeapons[selectWeaponIndex]; }
+            { return equippedWeapons[SyncSelectWeaponIndex]; }
             catch
             { return EquippedWeapon.Empty; }
         }
@@ -444,9 +455,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     stats += value.stats;
                 }
             }
-            if (attributeAmounts.Dict != null)
+            if (SyncAttributeAmounts.Dict != null)
             {
-                foreach (var kv in attributeAmounts.Dict)
+                foreach (var kv in SyncAttributeAmounts.Dict)
                 {
                     CharacterAttributes attribute;
                     if (GameplayManager.Singleton.Attributes.TryGetValue(kv.Key, out attribute))
@@ -576,20 +587,20 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (!PhotonNetwork.IsMasterClient)
             return;
         base.Init();
-        hp = 0;
-        armor = 0;
-        exp = 0;
-        level = 1;
-        statPoint = 0;
-        watchAdsCount = 0;
-        selectCharacter = 0;
-        selectHead = 0;
-        selectWeapons = new int[0];
-        selectCustomEquipments = new int[0];
-        selectWeaponIndex = -1;
-        isInvincible = false;
-        attributeAmounts = new AttributeAmounts(0);
-        extra = string.Empty;
+        SyncHp = 0;
+        SyncArmor = 0;
+        SyncExp = 0;
+        SyncLevel = 1;
+        SyncStatPoint = 0;
+        SyncWatchAdsCount = 0;
+        SyncSelectCharacter = 0;
+        SyncSelectHead = 0;
+        SyncSelectWeapons = new int[0];
+        SyncSelectCustomEquipments = new int[0];
+        SyncSelectWeaponIndex = -1;
+        SyncIsInvincible = false;
+        SyncAttributeAmounts = new AttributeAmounts(0);
+        SyncExtra = string.Empty;
     }
 
     protected override void Awake()
@@ -614,48 +625,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
             localPlayerObject.SetActive(false);
         }
         deathTime = Time.unscaledTime;
-    }
-
-    protected override void SyncData()
-    {
-        if (!PhotonNetwork.IsMasterClient)
-            return;
-        base.SyncData();
-        photonView.OthersRPC(RpcUpdateHp, hp);
-        photonView.OthersRPC(RpcUpdateArmor, armor);
-        photonView.OthersRPC(RpcUpdateExp, exp);
-        photonView.OthersRPC(RpcUpdateLevel, level);
-        photonView.OthersRPC(RpcUpdateStatPoint, statPoint);
-        photonView.OthersRPC(RpcUpdateWatchAdsCount, watchAdsCount);
-        photonView.OthersRPC(RpcUpdateSelectCharacter, selectCharacter);
-        photonView.OthersRPC(RpcUpdateSelectHead, selectHead);
-        photonView.OthersRPC(RpcUpdateSelectWeapons, selectWeapons);
-        photonView.OthersRPC(RpcUpdateSelectCustomEquipments, selectCustomEquipments);
-        photonView.OthersRPC(RpcUpdateSelectWeaponIndex, selectWeaponIndex);
-        photonView.OthersRPC(RpcUpdateIsInvincible, isInvincible);
-        photonView.OthersRPC(RpcUpdateAttributeAmounts, attributeAmounts);
-        photonView.OthersRPC(RpcUpdateExtra, extra);
-    }
-
-    public override void OnPlayerEnteredRoom(Player newPlayer)
-    {
-        if (!PhotonNetwork.IsMasterClient)
-            return;
-        base.OnPlayerEnteredRoom(newPlayer);
-        photonView.TargetRPC(RpcUpdateHp, newPlayer, hp);
-        photonView.TargetRPC(RpcUpdateArmor, newPlayer, armor);
-        photonView.TargetRPC(RpcUpdateExp, newPlayer, exp);
-        photonView.TargetRPC(RpcUpdateLevel, newPlayer, level);
-        photonView.TargetRPC(RpcUpdateStatPoint, newPlayer, statPoint);
-        photonView.TargetRPC(RpcUpdateWatchAdsCount, newPlayer, watchAdsCount);
-        photonView.TargetRPC(RpcUpdateSelectCharacter, newPlayer, selectCharacter);
-        photonView.TargetRPC(RpcUpdateSelectHead, newPlayer, selectHead);
-        photonView.TargetRPC(RpcUpdateSelectWeapons, newPlayer, selectWeapons);
-        photonView.TargetRPC(RpcUpdateSelectCustomEquipments, newPlayer, selectCustomEquipments);
-        photonView.TargetRPC(RpcUpdateSelectWeaponIndex, newPlayer, selectWeaponIndex);
-        photonView.TargetRPC(RpcUpdateIsInvincible, newPlayer, isInvincible);
-        photonView.TargetRPC(RpcUpdateAttributeAmounts, newPlayer, attributeAmounts);
-        photonView.TargetRPC(RpcUpdateExtra, newPlayer, extra);
     }
 
     protected override void OnStartLocalPlayer()
@@ -701,20 +670,20 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 attackingActionId = -1;
         }
 
-        if (PhotonNetwork.IsMasterClient && isInvincible && Time.unscaledTime - invincibleTime >= GameplayManager.Singleton.invincibleDuration)
-            isInvincible = false;
+        if (PhotonNetwork.IsMasterClient && SyncIsInvincible && Time.unscaledTime - invincibleTime >= GameplayManager.Singleton.invincibleDuration)
+            SyncIsInvincible = false;
         if (invincibleEffect != null)
-            invincibleEffect.SetActive(isInvincible);
+            invincibleEffect.SetActive(SyncIsInvincible);
         if (nameText != null)
-            nameText.text = playerName;
+            nameText.text = PlayerName;
         if (hpBarContainer != null)
-            hpBarContainer.gameObject.SetActive(hp > 0);
+            hpBarContainer.gameObject.SetActive(SyncHp > 0);
         if (hpFillImage != null)
-            hpFillImage.fillAmount = (float)hp / (float)TotalHp;
+            hpFillImage.fillAmount = (float)SyncHp / (float)TotalHp;
         if (hpText != null)
-            hpText.text = hp + "/" + TotalHp;
+            hpText.text = SyncHp + "/" + TotalHp;
         if (levelText != null)
-            levelText.text = level.ToString("N0");
+            levelText.text = SyncLevel.ToString("N0");
         UpdateViewMode();
         UpdateAimPosition();
         UpdateAnimation();
@@ -727,9 +696,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
             attackSignalObject.SetActive(isPlayingAttackAnim);
         // TODO: Improve team codes
         if (attackSignalObjectForTeamA != null)
-            attackSignalObjectForTeamA.SetActive(isPlayingAttackAnim && playerTeam == 1);
+            attackSignalObjectForTeamA.SetActive(isPlayingAttackAnim && PlayerTeam == 1);
         if (attackSignalObjectForTeamB != null)
-            attackSignalObjectForTeamB.SetActive(isPlayingAttackAnim && playerTeam == 2);
+            attackSignalObjectForTeamB.SetActive(isPlayingAttackAnim && PlayerTeam == 2);
     }
 
     private void FixedUpdate()
@@ -1111,8 +1080,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 {
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.DecreaseAmmo();
-                    equippedWeapons[selectWeaponIndex] = equippedWeapon;
-                    photonView.AllRPC(RpcUpdateEquippedWeaponsAmmo, selectWeaponIndex, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+                    equippedWeapons[SyncSelectWeaponIndex] = equippedWeapon;
+                    photonView.AllRPC(RpcUpdateEquippedWeaponsAmmo, SyncSelectWeaponIndex, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
                 }
 
                 // Random play shoot sounds
@@ -1156,8 +1125,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 {
                     var equippedWeapon = CurrentEquippedWeapon;
                     equippedWeapon.Reload();
-                    equippedWeapons[selectWeaponIndex] = equippedWeapon;
-                    photonView.AllRPC(RpcUpdateEquippedWeaponsAmmo, selectWeaponIndex, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
+                    equippedWeapons[SyncSelectWeaponIndex] = equippedWeapon;
+                    photonView.AllRPC(RpcUpdateEquippedWeaponsAmmo, SyncSelectWeaponIndex, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
                 }
                 if (WeaponData.clipInFx != null && AudioManager.Singleton != null)
                     AudioSource.PlayClipAtPoint(WeaponData.clipInFx, CacheTransform.position, AudioManager.Singleton.sfxVolumeSetting.Level);
@@ -1184,7 +1153,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     
     public virtual bool ReceiveDamage(CharacterEntity attacker, int damage)
     {
-        if (Hp <= 0 || isInvincible)
+        if (Hp <= 0 || SyncIsInvincible)
             return false;
 
         if (!GameplayManager.Singleton.CanReceiveDamage(this, attacker))
@@ -1228,7 +1197,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 photonView.OthersRPC(RpcInterruptAttack);
                 photonView.OthersRPC(RpcInterruptReload);
                 attacker.KilledTarget(this);
-                ++dieCount;
+                ++syncDieCount.Value;
             }
         }
         return true;
@@ -1240,18 +1209,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return;
 
         var gameplayManager = GameplayManager.Singleton;
-        var targetLevel = target.level;
+        var targetLevel = target.SyncLevel;
         var maxLevel = gameplayManager.maxLevel;
         Exp += Mathf.CeilToInt(gameplayManager.GetRewardExp(targetLevel) * TotalExpRate);
-        score += Mathf.CeilToInt(gameplayManager.GetKillScore(targetLevel) * TotalScoreRate);
+        syncScore.Value += Mathf.CeilToInt(gameplayManager.GetKillScore(targetLevel) * TotalScoreRate);
         foreach (var rewardCurrency in gameplayManager.rewardCurrencies)
         {
             var currencyId = rewardCurrency.currencyId;
             var amount = rewardCurrency.amount.Calculate(targetLevel, maxLevel);
             photonView.TargetRPC(RpcTargetRewardCurrency, photonView.Owner, currencyId, amount);
         }
-        ++killCount;
-        GameNetworkManager.Singleton.SendKillNotify(playerName, target.playerName, WeaponData == null ? string.Empty : WeaponData.GetId());
+        ++syncKillCount.Value;
+        GameNetworkManager.Singleton.SendKillNotify(PlayerName, target.PlayerName, WeaponData == null ? string.Empty : WeaponData.GetId());
     }
 
     public void Heal(int amount)
@@ -1311,7 +1280,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (!PhotonNetwork.IsMasterClient)
             return;
         invincibleTime = Time.unscaledTime;
-        isInvincible = true;
+        SyncIsInvincible = true;
     }
 
     public void ServerSpawn(bool isWatchedAds)
@@ -1349,7 +1318,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             equippedWeapons[i] = equippedWeapon;
             photonView.AllRPC(RpcUpdateEquippedWeapons, i, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
-        selectWeaponIndex = defaultWeaponIndex;
+        SyncSelectWeaponIndex = defaultWeaponIndex;
 
         isPlayingAttackAnim = false;
         isReloading = false;
@@ -1377,7 +1346,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         var gameInstance = GameInstance.Singleton;
         if (index >= 0 && index < MAX_EQUIPPABLE_WEAPON_AMOUNT && !equippedWeapons[index].IsEmpty())
         {
-            selectWeaponIndex = index;
+            SyncSelectWeaponIndex = index;
             InterruptAttack();
             InterruptReload();
             photonView.OthersRPC(RpcInterruptAttack);
@@ -1401,8 +1370,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
             photonView.OthersRPC(RpcInterruptAttack);
             photonView.OthersRPC(RpcInterruptReload);
             equippedWeapons[equipPosition] = equippedWeapon;
-            if (selectWeaponIndex == equipPosition)
-                RpcUpdateSelectWeaponIndex(selectWeaponIndex);
+            if (SyncSelectWeaponIndex == equipPosition)
+                RpcUpdateSelectWeaponIndex(SyncSelectWeaponIndex);
             photonView.AllRPC(RpcUpdateEquippedWeapons, equipPosition, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
         return updated;
@@ -1452,11 +1421,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         if (!alreadyInit)
         {
-            this.selectHead = selectHead;
-            this.selectCharacter = selectCharacter;
-            this.selectWeapons = selectWeapons;
-            this.selectCustomEquipments = selectCustomEquipments;
-            this.extra = extra;
+            this.SyncSelectHead = selectHead;
+            this.SyncSelectCharacter = selectCharacter;
+            this.SyncSelectWeapons = selectWeapons;
+            this.SyncSelectCustomEquipments = selectCustomEquipments;
+            this.SyncExtra = extra;
         }
         Hp = TotalHp;
     }
@@ -1506,13 +1475,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [PunRPC]
     protected void RpcServerAddAttribute(int id)
     {
-        if (statPoint > 0)
+        if (SyncStatPoint > 0)
         {
             CharacterAttributes attribute;
             if (GameplayManager.Singleton.Attributes.TryGetValue(id, out attribute))
             {
-                attributeAmounts = attributeAmounts.Increase(id, 1);
-                --statPoint;
+                SyncAttributeAmounts = SyncAttributeAmounts.Increase(id, 1);
+                --SyncStatPoint;
             }
         }
     }
@@ -1607,7 +1576,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [PunRPC]
     protected virtual void RpcUpdateArmor(int hp)
     {
-        _armor = armor;
+        _armor = SyncArmor;
     }
     [PunRPC]
     protected virtual void RpcUpdateExp(int exp)
@@ -1695,7 +1664,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             if (PhotonNetwork.IsMasterClient)
                 photonView.AllRPC(RpcUpdateEquippedWeapons, equipPos, equippedWeapon.defaultId, equippedWeapon.weaponId, equippedWeapon.currentAmmo, equippedWeapon.currentReserveAmmo);
         }
-        selectWeaponIndex = defaultWeaponIndex;
+        SyncSelectWeaponIndex = defaultWeaponIndex;
     }
     [PunRPC]
     protected virtual void RpcUpdateSelectCustomEquipments(int[] selectCustomEquipments)
@@ -1756,8 +1725,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         weapon.currentAmmo = currentAmmo;
         weapon.currentReserveAmmo = currentReserveAmmo;
         equippedWeapons[index] = weapon;
-        if (index == selectWeaponIndex)
-            RpcUpdateSelectWeaponIndex(selectWeaponIndex);
+        if (index == SyncSelectWeaponIndex)
+            RpcUpdateSelectWeaponIndex(SyncSelectWeaponIndex);
     }
     [PunRPC]
     protected virtual void RpcUpdateEquippedWeaponsAmmo(int index, int currentAmmo, int currentReserveAmmo)

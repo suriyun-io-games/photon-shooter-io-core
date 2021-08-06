@@ -15,7 +15,7 @@ public class BotEntity : CharacterEntity
         NoneAttack
     }
     protected string botPlayerName;
-    public override string playerName
+    public override string PlayerName
     {
         get { return botPlayerName; }
         set
@@ -87,22 +87,6 @@ public class BotEntity : CharacterEntity
             dashingTime = Time.unscaledTime;
             randomDashDuration = dashDuration + Random.Range(randomDashDurationMin, randomDashDurationMax);
         }
-    }
-
-    protected override void SyncData()
-    {
-        if (!PhotonNetwork.IsMasterClient)
-            return;
-        base.SyncData();
-        photonView.OthersRPC(RpcUpdateBotName, botPlayerName);
-    }
-
-    public override void OnPlayerEnteredRoom(Player newPlayer)
-    {
-        if (!PhotonNetwork.IsMasterClient)
-            return;
-        base.OnPlayerEnteredRoom(newPlayer);
-        photonView.TargetRPC(RpcUpdateBotName, newPlayer, botPlayerName);
     }
 
     // Override to do nothing
@@ -214,7 +198,7 @@ public class BotEntity : CharacterEntity
                                     ServerChangeWeapon(nextPosition);
                             }
                             else
-                                ServerChangeWeapon(selectWeaponIndex + 1);
+                                ServerChangeWeapon(SyncSelectWeaponIndex + 1);
                         }
                     }
                     break;
@@ -301,7 +285,7 @@ public class BotEntity : CharacterEntity
 
     private void UpdateStatPoint()
     {
-        if (statPoint <= 0)
+        if (SyncStatPoint <= 0)
             return;
         var dict = new Dictionary<CharacterAttributes, int>();
         var list = GameplayManager.Singleton.Attributes.Values.ToList();

@@ -27,10 +27,10 @@ public class DeathMatchNetworkGameRule : IONetworkGameRule
         var targetCharacter = character as CharacterEntity;
         // In death match mode will not reset score, kill, assist, death
         targetCharacter.Exp = 0;
-        targetCharacter.level = 1;
-        targetCharacter.statPoint = 0;
-        targetCharacter.watchAdsCount = 0;
-        targetCharacter.attributeAmounts = new AttributeAmounts(0);
+        targetCharacter.SyncLevel = 1;
+        targetCharacter.SyncStatPoint = 0;
+        targetCharacter.SyncWatchAdsCount = 0;
+        targetCharacter.SyncAttributeAmounts = new AttributeAmounts(0);
         targetCharacter.Armor = 0;
 
         return true;

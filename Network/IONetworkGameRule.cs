@@ -42,26 +42,26 @@ public class IONetworkGameRule : BaseNetworkGameRule
         // Set character data
         var botGo = PhotonNetwork.InstantiateRoomObject(botPrefab.name, Vector3.zero, Quaternion.identity, 0, new object[0]);
         var botEntity = botGo.GetComponent<BotEntity>();
-        botEntity.playerName = bot.name;
-        botEntity.selectHead = bot.GetSelectHead();
-        botEntity.selectCharacter = bot.GetSelectCharacter();
+        botEntity.PlayerName = bot.name;
+        botEntity.SyncSelectHead = bot.GetSelectHead();
+        botEntity.SyncSelectCharacter = bot.GetSelectCharacter();
         if (startWeapons != null && startWeapons.Length > 0)
-            botEntity.selectWeapons = GetStartWeapons();
+            botEntity.SyncSelectWeapons = GetStartWeapons();
         else
-            botEntity.selectWeapons = bot.GetSelectWeapons();
+            botEntity.SyncSelectWeapons = bot.GetSelectWeapons();
         return botEntity;
     }
 
     public virtual void NewPlayer(CharacterEntity character, int selectHead, int selectCharacter, int[] selectWeapons, int[] selectCustomEquipments, string extra)
     {
-        character.selectHead = selectHead;
-        character.selectCharacter = selectCharacter;
+        character.SyncSelectHead = selectHead;
+        character.SyncSelectCharacter = selectCharacter;
         if (startWeapons != null && startWeapons.Length > 0)
-            character.selectWeapons = GetStartWeapons();
+            character.SyncSelectWeapons = GetStartWeapons();
         else
-            character.selectWeapons = selectWeapons;
-        character.selectCustomEquipments = selectCustomEquipments;
-        character.extra = extra;
+            character.SyncSelectWeapons = selectWeapons;
+        character.SyncSelectCustomEquipments = selectCustomEquipments;
+        character.SyncExtra = extra;
     }
 
     public override bool CanCharacterRespawn(BaseNetworkGameCharacter character, params object[] extraParams)
@@ -80,20 +80,20 @@ public class IONetworkGameRule : BaseNetworkGameRule
         var targetCharacter = character as CharacterEntity;
         var gameplayManager = GameplayManager.Singleton;
         // For IO Modes, character stats will be reset when dead
-        if (!isWatchedAds || targetCharacter.watchAdsCount >= gameplayManager.watchAdsRespawnAvailable)
+        if (!isWatchedAds || targetCharacter.SyncWatchAdsCount >= gameplayManager.watchAdsRespawnAvailable)
         {
             targetCharacter.ResetScore();
             targetCharacter.ResetKillCount();
             targetCharacter.ResetAssistCount();
             targetCharacter.Exp = 0;
-            targetCharacter.level = 1;
-            targetCharacter.statPoint = 0;
-            targetCharacter.watchAdsCount = 0;
-            targetCharacter.attributeAmounts = new AttributeAmounts(0);
+            targetCharacter.SyncLevel = 1;
+            targetCharacter.SyncStatPoint = 0;
+            targetCharacter.SyncWatchAdsCount = 0;
+            targetCharacter.SyncAttributeAmounts = new AttributeAmounts(0);
             targetCharacter.Armor = 0;
         }
         else
-            ++targetCharacter.watchAdsCount;
+            ++targetCharacter.SyncWatchAdsCount;
 
         return true;
     }
