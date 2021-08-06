@@ -701,7 +701,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (characterModel == null)
             return;
-        var animator = characterModel.TempAnimator;
+        var animator = characterModel.CacheAnimator;
         if (animator == null)
             return;
         if (Hp <= 0)
@@ -845,7 +845,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         // Turn character to move direction
         if (inputDirection.magnitude <= 0 && inputMove.magnitude > 0 || viewMode == ViewMode.ThirdPerson)
             inputDirection = inputMove;
-        if (characterModel && characterModel.TempAnimator && (characterModel.TempAnimator.GetBool("DoAction") || Time.unscaledTime - lastActionTime <= returnToMoveDirectionDelay) && viewMode == ViewMode.ThirdPerson)
+        if (characterModel && characterModel.CacheAnimator && (characterModel.CacheAnimator.GetBool("DoAction") || Time.unscaledTime - lastActionTime <= returnToMoveDirectionDelay) && viewMode == ViewMode.ThirdPerson)
             inputDirection = cameraForward;
         if (!IsDead)
             Rotate(isDashing ? dashInputMove : inputDirection);
@@ -914,7 +914,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             CurrentEquippedWeapon.CanShoot() &&
             Hp > 0 &&
             characterModel != null &&
-            characterModel.TempAnimator != null)
+            characterModel.CacheAnimator != null)
         {
             isPlayingAttackAnim = true;
             AttackAnimation attackAnimation;
@@ -924,9 +924,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 if (endActionDelayCoroutine != null)
                     StopCoroutine(endActionDelayCoroutine);
                 // Play attack animation
-                characterModel.TempAnimator.SetBool("DoAction", true);
-                characterModel.TempAnimator.SetInteger("ActionID", attackAnimation.actionId);
-                characterModel.TempAnimator.Play(0, 1, 0);
+                characterModel.CacheAnimator.SetBool("DoAction", true);
+                characterModel.CacheAnimator.SetInteger("ActionID", attackAnimation.actionId);
+                characterModel.CacheAnimator.Play(0, 1, 0);
 
                 // Wait to launch damage entity
                 var speed = attackAnimation.speed;
@@ -967,7 +967,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (delay > 0f)
             yield return new WaitForSeconds(delay);
-        characterModel.TempAnimator.SetBool("DoAction", false);
+        characterModel.CacheAnimator.SetBool("DoAction", false);
     }
 
     IEnumerator ReloadRoutine()
