@@ -166,14 +166,13 @@ public class BotEntity : CharacterEntity
             lookingPosition = enemy.CacheTransform.position;
         }
 
-        AttackingActionId = -1;
         if (enemy != null)
         {
             switch (characteristic)
             {
                 case Characteristic.Aggressive:
                     if (Time.unscaledTime - lastAttackTime >= attackDuration &&
-                    Vector3.Distance(enemy.CacheTransform.position, CacheTransform.position) < GetAttackRange())
+                        Vector3.Distance(enemy.CacheTransform.position, CacheTransform.position) < GetAttackRange())
                     {
                         // Attack when nearby enemy
                         if (WeaponData != null)
@@ -218,10 +217,7 @@ public class BotEntity : CharacterEntity
 
         // Gets a vector that points from the player's position to the target's.
         isReachedTarget = IsReachedTargetPosition();
-        if (!isReachedTarget)
-        {
-            Move(IsDashing ? dashDirection : (targetPosition - CacheTransform.position).normalized);
-        }
+        Move(isReachedTarget ? Vector3.zero : (IsDashing ? dashDirection : (targetPosition - CacheTransform.position).normalized));
 
         if (isReachedTarget)
         {
@@ -234,6 +230,15 @@ public class BotEntity : CharacterEntity
         var targetRotation = Quaternion.LookRotation(rotateHeading);
         CacheTransform.rotation = Quaternion.Lerp(CacheTransform.rotation, Quaternion.Euler(0, targetRotation.eulerAngles.y, 0), Time.deltaTime * turnSpeed);
         UpdateStatPoint();
+    }
+
+    private void LateUpdate()
+    {
+        if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.PlayerCount > 1)
+            return;
+        // Reset state
+        IsBlocking = false;
+        AttackingActionId = -1;
     }
 
     void OnDrawGizmos()
