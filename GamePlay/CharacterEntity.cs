@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Photon.Pun;
 
-[RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CharacterMovement))]
 [RequireComponent(typeof(CharacterAction))]
 [RequireComponent(typeof(SyncHpRpcComponent))]
@@ -300,7 +299,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
     }
 
     public Transform CacheTransform { get; private set; }
-    public Rigidbody CacheRigidbody { get; private set; }
     public CharacterMovement CacheCharacterMovement { get; private set; }
     public CharacterAction CacheCharacterAction { get; private set; }
 
@@ -496,8 +494,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
         base.Awake();
         gameObject.layer = GameInstance.Singleton.characterLayer;
         CacheTransform = transform;
-        CacheRigidbody = gameObject.GetOrAddComponent<Rigidbody>();
-        CacheRigidbody.useGravity = false;
         CacheCharacterMovement = gameObject.GetOrAddComponent<CharacterMovement>();
         CacheCharacterAction = gameObject.GetOrAddComponent<CharacterAction>();
         if (!photonView.ObservedComponents.Contains(CacheCharacterAction))

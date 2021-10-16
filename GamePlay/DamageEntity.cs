@@ -24,6 +24,7 @@ public class DamageEntity : MonoBehaviour
     private float addRotationX;
     private float addRotationY;
     private float? colliderExtents;
+    private HashSet<int> appliedIDs = new HashSet<int>();
     [HideInInspector]
     public int weaponDamage;
 
@@ -105,13 +106,9 @@ public class DamageEntity : MonoBehaviour
                 }
                 var baseAngles = attacker.CacheTransform.eulerAngles;
                 CacheTransform.rotation = Quaternion.Euler(baseAngles.x + addRotationX, baseAngles.y + addRotationY, baseAngles.z);
-                CacheRigidbody.velocity = Attacker.CacheRigidbody.velocity + GetForwardVelocity();
             }
-            else
-                CacheRigidbody.velocity = GetForwardVelocity();
         }
-        else
-            CacheRigidbody.velocity = GetForwardVelocity();
+        CacheRigidbody.velocity = GetForwardVelocity();
     }
 
     private void OnDestroy()
@@ -191,14 +188,17 @@ public class DamageEntity : MonoBehaviour
 
     private void ApplyDamage(CharacterEntity target)
     {
+        if (appliedIDs.Contains(target.photonView.ViewID))
+            return;
         // Damage receiving calculation on server only
         if (PhotonNetwork.IsMasterClient && Attacker != null)
         {
+            appliedIDs.Add(target.photonView.ViewID);
             float damage = weaponDamage * Attacker.TotalWeaponDamageRate;
             damage += (Random.Range(GameplayManager.Singleton.minAttackVaryRate, GameplayManager.Singleton.maxAttackVaryRate) * damage);
             target.ReceiveDamage(Attacker, Mathf.CeilToInt(damage));
         }
-        target.CacheRigidbody.AddExplosionForce(explosionForce, CacheTransform.position, explosionForceRadius);
+        target.CacheCharacterMovement.AddExplosionForce(CacheTransform.position, explosionForce, explosionForceRadius);
     }
 
     private float GetColliderExtents()

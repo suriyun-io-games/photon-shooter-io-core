@@ -23,6 +23,9 @@ public class CharacterAction : MonoBehaviourPun, IPunObservable
             if (!IsBlocking)
                 stream.SendNext(AttackingActionId);
             stream.SendNext(AimPosition);
+            // Reset states
+            IsBlocking = false;
+            AttackingActionId = -1;
         }
     }
 }
