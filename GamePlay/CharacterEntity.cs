@@ -468,6 +468,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
     }
 
+    public virtual int RewardExp
+    {
+        get { return GameplayManager.Singleton.GetRewardExp(Level); }
+    }
+
+    public virtual int KillScore
+    {
+        get { return GameplayManager.Singleton.GetKillScore(Level); }
+    }
+
     protected override void Init()
     {
         if (!PhotonNetwork.IsMasterClient)
@@ -1108,15 +1118,19 @@ public class CharacterEntity : BaseNetworkGameCharacter
         var gameplayManager = GameplayManager.Singleton;
         var targetLevel = target.Level;
         var maxLevel = gameplayManager.maxLevel;
-        Exp += Mathf.CeilToInt(gameplayManager.GetRewardExp(targetLevel) * TotalExpRate);
-        syncScore.Value += Mathf.CeilToInt(gameplayManager.GetKillScore(targetLevel) * TotalScoreRate);
+        Exp += Mathf.CeilToInt(target.RewardExp * TotalExpRate);
+        var increaseScore = Mathf.CeilToInt(target.KillScore * TotalScoreRate);
+        syncScore.Value += increaseScore;
+        GameNetworkManager.Singleton.OnScoreIncrease(this, increaseScore);
         foreach (var rewardCurrency in gameplayManager.rewardCurrencies)
         {
             var currencyId = rewardCurrency.currencyId;
             var amount = rewardCurrency.amount.Calculate(targetLevel, maxLevel);
             photonView.TargetRPC(RpcTargetRewardCurrency, photonView.Owner, currencyId, amount);
         }
-        ++syncKillCount.Value;
+        var increaseKill = 1;
+        syncKillCount.Value += increaseKill;
+        GameNetworkManager.Singleton.OnKillIncrease(this, increaseKill);
         GameNetworkManager.Singleton.SendKillNotify(PlayerName, target.PlayerName, WeaponData == null ? string.Empty : WeaponData.GetId());
     }
 
