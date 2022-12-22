@@ -1,8 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Photon.Pun;
 
 public class WeaponData : ItemData
 {
@@ -49,11 +47,7 @@ public class WeaponData : ItemData
         {
             var addRotationX = Random.Range(-staggerY, staggerY);
             var addRotationY = Random.Range(-staggerX, staggerX);
-            var damageEntity = DamageEntity.InstantiateNewEntity(GetHashId(), isLeftHandWeapon, targetPosition, attacker.photonView.ViewID, addRotationX, addRotationY);
-            if (damageEntity)
-            {
-                damageEntity.weaponDamage = Mathf.CeilToInt(damage / spread);
-            }
+            DamageEntity.InstantiateNewEntity(this, isLeftHandWeapon, targetPosition, attacker, addRotationX, addRotationY, spread);
         }
 
         Transform muzzleTransform;

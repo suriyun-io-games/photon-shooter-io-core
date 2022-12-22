@@ -1543,6 +1543,34 @@ public class CharacterEntity : BaseNetworkGameCharacter
         pickup.Pickup(this);
     }
 
+    public void CmdApplyWeaponDamage(int targetViewId, int weaponId, int spread)
+    {
+        photonView.MasterRPC(RpcApplyWeaponDamage, targetViewId, weaponId, spread);
+    }
+
+    [PunRPC]
+    public void RpcApplyWeaponDamage(int targetViewId, int weaponId, int spread)
+    {
+        var target = PhotonView.Find(targetViewId);
+        if (target == null)
+            return;
+        var targetCharacter = target.GetComponent<CharacterEntity>();
+        if (targetCharacter == null)
+            return;
+        if (!GameInstance.Weapons.TryGetValue(weaponId, out var weaponData))
+            return;
+        ApplyWeaponDamage(targetCharacter, weaponData, spread);
+    }
+
+    public void ApplyWeaponDamage(CharacterEntity targetCharacter, WeaponData weaponData, float spread)
+    {
+        if (targetCharacter == null || weaponData == null)
+            return;
+        float damage = weaponData.damage * TotalWeaponDamageRate / spread;
+        damage += (Random.Range(GameplayManager.Singleton.minAttackVaryRate, GameplayManager.Singleton.maxAttackVaryRate) * damage);
+        targetCharacter.ReceiveDamage(this, Mathf.CeilToInt(damage));
+    }
+
     [PunRPC]
     public void RpcReload()
     {
