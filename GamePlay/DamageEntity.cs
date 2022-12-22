@@ -20,8 +20,8 @@ public class DamageEntity : MonoBehaviour
     public bool relateToAttacker;
     private bool isDead;
     private WeaponData weaponData;
-    private CharacterEntity attacker;
     private bool isLeftHandWeapon;
+    private CharacterEntity attacker;
     private float addRotationX;
     private float addRotationY;
     private int spread;
@@ -218,7 +218,7 @@ public class DamageEntity : MonoBehaviour
         return CacheTransform.forward * speed * GameplayManager.REAL_MOVE_SPEED_RATE;
     }
 
-    public static DamageEntity InstantiateNewEntity(
+    public static DamageEntity InstantiateNewEntityByWeapon(
         WeaponData weaponData,
         bool isLeftHandWeapon,
         Vector3 targetPosition,

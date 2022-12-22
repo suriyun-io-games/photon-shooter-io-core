@@ -1567,7 +1567,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (targetCharacter == null || weaponData == null)
             return;
         float damage = weaponData.damage * TotalWeaponDamageRate / spread;
-        damage += (Random.Range(GameplayManager.Singleton.minAttackVaryRate, GameplayManager.Singleton.maxAttackVaryRate) * damage);
+        damage += Random.Range(GameplayManager.Singleton.minAttackVaryRate, GameplayManager.Singleton.maxAttackVaryRate) * damage;
         targetCharacter.ReceiveDamage(this, Mathf.CeilToInt(damage));
     }
 

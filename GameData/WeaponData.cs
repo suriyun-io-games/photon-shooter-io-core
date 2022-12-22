@@ -47,7 +47,7 @@ public class WeaponData : ItemData
         {
             var addRotationX = Random.Range(-staggerY, staggerY);
             var addRotationY = Random.Range(-staggerX, staggerX);
-            DamageEntity.InstantiateNewEntity(this, isLeftHandWeapon, targetPosition, attacker, addRotationX, addRotationY, spread);
+            DamageEntity.InstantiateNewEntityByWeapon(this, isLeftHandWeapon, targetPosition, attacker, addRotationX, addRotationY, spread);
         }
 
         Transform muzzleTransform;
