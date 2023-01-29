@@ -147,7 +147,10 @@ public class UIMainMenu : MonoBehaviour
         if (headData != null)
             characterModel.SetHeadModel(headData.modelObject);
         if (weaponData != null)
+        {
             characterModel.SetWeaponModel(weaponData.rightHandObject, weaponData.leftHandObject, weaponData.shieldObject);
+            characterModel.CacheAnimator.SetInteger("WeaponAnimId", weaponData.weaponAnimId);
+        }
         characterModel.gameObject.SetActive(true);
     }
 
@@ -172,7 +175,10 @@ public class UIMainMenu : MonoBehaviour
         {
             weaponData = newWeaponData;
             if (characterModel != null && weaponData != null)
+            {
                 characterModel.SetWeaponModel(weaponData.rightHandObject, weaponData.leftHandObject, weaponData.shieldObject);
+                characterModel.CacheAnimator.SetInteger("WeaponAnimId", weaponData.weaponAnimId);
+            }
         }
     }
 
